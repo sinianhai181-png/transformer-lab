@@ -36,14 +36,14 @@
       <label class="mt">目标序列 token（decoder / cross 使用）
         <input type="text" id="tgtTokens" value="&lt;s&gt; I love" spellcheck="false">
       </label>
-      <p class="hint"> decoder 输入按论文右移一位：<code>tgt[:, :-1]</code>；标签是 <code>tgt[:, 1:]</code>。</p>
+      <p class="hint">选择「Encoder–Decoder 交叉注意力」可同时查看编码器与解码器。decoder 输入按论文右移一位：<code>tgt[:, :-1]</code>；标签是 <code>tgt[:, 1:]</code>。</p>
 
       <div class="form-row two mt">
         <label>注意力模式
           <select id="mode">
             <option value="encoder">Encoder 自注意力（双向）</option>
             <option value="decoder">Decoder 自注意力（因果掩码）</option>
-            <option value="cross">Encoder–Decoder 交叉注意力</option>
+            <option value="cross">Encoder–Decoder 交叉注意力（编码器 + 解码器）</option>
           </select>
         </label>
         <label>模型维度 d_model

@@ -29,19 +29,25 @@ npm test
 
 ## 界面预览
 
-以下截图均由真实浏览器运行本页面后拍摄，未做后期修饰：
+以下截图均由真实浏览器运行本页面后拍摄，未做后期修饰。
 
-| 全景结构与逐环节演示 | 注意力权重热力图 |
-| --- | --- |
-| ![全景结构](docs/assets/02-panorama.png) | ![注意力热力图](docs/assets/04-attention-heatmap.png) |
+默认是 Encoder 自注意力模式；若要同时查看**编码器 + 解码器**，请在前台「注意力模式」中选择 **Encoder–Decoder 交叉注意力（cross）**，对应全景见下表首图。
 
-| 逐环节步骤面板 | 权重编辑器 |
+| 完整编码器—解码器（cross 模式） | 编码器自注意力（默认模式） |
 | --- | --- |
-| ![逐环节演示](docs/assets/03-stepwise.png) | ![权重编辑器](docs/assets/05-weight-editor.png) |
+| ![完整编码器解码器全景](docs/assets/07-encoder-decoder.png) | ![全景结构](docs/assets/02-panorama.png) |
 
-| 多头分工实验 | 首屏总览 |
+| 注意力权重热力图 | 逐环节步骤面板 |
 | --- | --- |
-| ![多头分工](docs/assets/06-experiments.png) | ![首屏总览](docs/assets/01-overview.png) |
+| ![注意力热力图](docs/assets/04-attention-heatmap.png) | ![逐环节演示](docs/assets/03-stepwise.png) |
+
+| 权重编辑器 | 多头分工实验 |
+| --- | --- |
+| ![权重编辑器](docs/assets/05-weight-editor.png) | ![多头分工](docs/assets/06-experiments.png) |
+
+| 首屏总览 | |
+| --- | --- |
+| ![首屏总览](docs/assets/01-overview.png) | |
 
 ## 能改什么
 
@@ -54,7 +60,7 @@ npm test
 
 ## 看得到什么
 
-- **全景结构图**：Encoder / Decoder 栈、残差与归一化、交叉注意力的 K/V 来源；点击任一模块跳到对应计算步骤。
+- **全景结构图**：选择 cross 模式可同时看到 Encoder 与 Decoder 两栈、残差与归一化、交叉注意力的 K/V 来源；点击任一模块跳到对应计算步骤。
 - **逐环节演示**：从 tokenize、embedding×√d、位置编码、QKV 投影、`QKᵀ`、缩放、掩码、softmax、加权求和、多头拼接、`Wᴼ`、Add&Norm、FFN，到共享 embedding 的输出概率，共 19–30 个步骤，可单步或自动播放。
 - **张量数值**：每步显示完整矩阵、张量形状、公式、来源标注（`[论文]` / `[实现]` / `[解读]`）和一句解释。
 - **注意力热力图**：行是 Query 位置、列是 Key 位置，悬停查看具体权重；分数矩阵用发散色，注意力权重用单色深浅。
