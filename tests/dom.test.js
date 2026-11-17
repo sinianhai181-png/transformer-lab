@@ -69,6 +69,15 @@ exports.run = function (t) {
   const jumped = w.TMApp.state().stepIndex;
   t.ok(w.TMApp.state().steps[jumped].focus.indexOf('ffn') >= 0, '点击全景 FFN 节点跳转到相应步骤');
 
+  const downloads = [];
+  w.URL.createObjectURL = function () { return 'blob:test'; };
+  w.URL.revokeObjectURL = function () {};
+  const originalClick = w.HTMLAnchorElement.prototype.click;
+  w.HTMLAnchorElement.prototype.click = function () { downloads.push(this.download); };
+  fire(w, doc.getElementById('btnExportSvg'), 'click');
+  t.ok(downloads.some(n => n.indexOf('transformer-panorama-') === 0), '全景图导出按钮生成 SVG 下载');
+  w.HTMLAnchorElement.prototype.click = originalClick;
+
   t.group('界面 · 权重编辑');
 
   const preset = doc.getElementById('presetSelect');
@@ -79,16 +88,17 @@ exports.run = function (t) {
   t.ok(Wk.every(row => row[0] === 1), '预设权重填入并应用：W_K 第一列全 1');
   t.ok(doc.getElementById('stepBody').innerHTML.length > 0, '重算后数值面板仍正常渲染');
 
-  t.group('界面 · 四个实验');
+  t.group('界面 · 五个实验');
 
   const tabs = doc.querySelectorAll('#labTabs .lab-tab');
-  t.eq(tabs.length, 4, '实验台有四个实验标签');
-  ['pe', 'mask', 'heads', 'scale'].forEach(function (id) {
+  t.eq(tabs.length, 5, '实验台有五个实验标签');
+  ['pe', 'mask', 'heads', 'scale', 'complexity'].forEach(function (id) {
     const b = doc.querySelector('#labTabs .lab-tab[data-id="' + id + '"]');
     fire(w, b, 'click');
     const html = doc.getElementById('labBody').innerHTML;
     t.ok(html.length > 100 && html.indexOf('实验运行失败') < 0, '实验 ' + id + ' 正常渲染');
   });
+  t.ok(doc.getElementById('labBody').innerHTML.indexOf('n²') >= 0, '复杂度实验显示 n² 曲线说明');
 
   w.TMApp.pause();
   w.close();

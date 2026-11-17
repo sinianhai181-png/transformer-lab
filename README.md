@@ -6,7 +6,7 @@
 
 把 Transformer 论文里的每一步张量摊开给你看：自己改 Q/K/V 权重、输入 token 和超参数，逐步观察注意力矩阵、多头分工、掩码、归一化与输出概率如何变化。
 
-这是 [BP 神经网络反向传播实验台](../README.md) 的姊妹项目，延续同一套设计原则：**零依赖、双击运行、逐环节可观测、数值与论文对齐、可编辑而非只看动画**。
+这是 [BP 神经网络反向传播实验台](https://github.com/sinianhai181-png/bp-neural-network-lab) 的姊妹项目，延续同一套设计原则：**零依赖、双击运行、逐环节可观测、数值与论文对齐、可编辑而非只看动画**。
 
 ## 快速开始
 
@@ -25,7 +25,7 @@ npm install
 npm test
 ```
 
-当前测试：**77 项全部通过**，覆盖矩阵运算、位置编码、掩码、形状不变量、可编辑权重、序列化，以及界面初始化、参数联动、播放器、权重编辑和四个实验。
+当前测试：**80 项全部通过**，覆盖矩阵运算、位置编码、掩码、形状不变量、可编辑权重、序列化，以及界面初始化、参数联动、播放器、权重编辑、五个实验与结构图导出。
 
 ## 界面预览
 
@@ -64,11 +64,11 @@ npm test
 - **逐环节演示**：从 tokenize、embedding×√d、位置编码、QKV 投影、`QKᵀ`、缩放、掩码、softmax、加权求和、多头拼接、`Wᴼ`、Add&Norm、FFN，到共享 embedding 的输出概率，共 19–30 个步骤，可单步或自动播放。
 - **张量数值**：每步显示完整矩阵、张量形状、公式、来源标注（`[论文]` / `[实现]` / `[解读]`）和一句解释。
 - **注意力热力图**：行是 Query 位置、列是 Key 位置，悬停查看具体权重；分数矩阵用发散色，注意力权重用单色深浅。
-- **四个对照实验**：位置编码消融、因果掩码对比、多头分工、缩放与温度。
+- **五个对照实验**：位置编码消融、因果掩码对比、多头分工、缩放与温度、注意力复杂度 `O(n²)`。
 
 ## 严谨性：资料等级与标注
 
-项目基于 `../docs/TRANSFORMER.md` 整理的一手资料，界面中每个步骤都标了出处：
+项目基于仓库内的 [docs/TRANSFORMER.md](docs/TRANSFORMER.md) 整理的一手资料，界面中每个步骤都标了出处：
 
 - **`[论文]`** — Vaswani et al., *Attention Is All You Need*, arXiv:1706.03762v7。结构、公式、超参数、复杂度表的唯一权威依据。
 - **`[实现]`** — Harvard NLP, *The Annotated Transformer*。张量形状、掩码构造、teacher forcing，以及论文文字与实际代码不一致的地方。
@@ -82,7 +82,7 @@ npm test
 - 论文写掩码为 `−∞`，实现用 `−1e9` 近似。
 - "注意力权重 = 模型在关注什么"只是软路由，不是因果解释证据。
 
-完整推导见 [docs/MATH.md](docs/MATH.md)，实验说明见 [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md)，贡献约定见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+完整的 Transformer 知识整理见 [docs/TRANSFORMER.md](docs/TRANSFORMER.md)，公式推导见 [docs/MATH.md](docs/MATH.md)，实验说明见 [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md)，贡献约定见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 目录结构
 
@@ -93,15 +93,16 @@ transformer-lab/
 ├── js/engine.js            # 核心计算：矩阵、注意力、多头、FFN、归一化、快照
 ├── js/visualizer.js        # 全景 SVG、矩阵表、热力图、折线图
 ├── js/app.js               # 控件联动、播放器、权重编辑、导入导出
-├── js/lab.js               # 四个对照实验
+├── js/lab.js               # 五个对照实验
 ├── tests/
 │   ├── engine.test.js      # 数值与不变量
 │   ├── dom.test.js         # 界面交互
 │   └── run-all.js          # 测试入口
 ├── docs/
-│   ├── MATH.md             # 公式与维度推导
-│   ├── EXPERIMENTS.md      # 实验说明
-│   └── assets/             # 真实浏览器截图
+│   ├── TRANSFORMER.md       # Transformer 系统整理：论文、实现、变体与澄清
+│   ├── MATH.md              # 公式与维度推导
+│   ├── EXPERIMENTS.md       # 实验说明
+│   └── assets/              # 真实浏览器截图
 ├── .github/workflows/test.yml  # Node 18/20/22 CI
 ├── README.md / CHANGELOG.md / CONTRIBUTING.md / LICENSE
 ├── package.json

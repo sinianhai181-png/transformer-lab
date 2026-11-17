@@ -1,6 +1,6 @@
 /* =============================================================
  * Transformer 可视化实验室 · 拓展实验台
- * 四个对照实验：位置编码消融 / 因果掩码 / 多头分工 / 缩放与温度
+ * 五个对照实验：位置编码消融 / 因果掩码 / 多头分工 / 缩放与温度 / 注意力复杂度
  * 原则：固定同一组权重，只改变被研究的那个变量。
  * ============================================================= */
 (function () {
@@ -13,7 +13,8 @@
     { id: 'pe', label: '位置编码消融' },
     { id: 'mask', label: '因果掩码对比' },
     { id: 'heads', label: '多头分工' },
-    { id: 'scale', label: '缩放与温度' }
+    { id: 'scale', label: '缩放与温度' },
+    { id: 'complexity', label: '注意力复杂度' }
   ];
   var state = { active: 'pe', dirty: true, report: null };
 
@@ -174,6 +175,34 @@
       '准确说法是「控制方差、防止梯度消失」，而不是笼统的「防止数值溢出」。论文原文还指出：d_k 大时，不缩放的加性注意力反而优于点积注意力。</div>';
   }
 
+  /* ---------------- 实验 5：注意力复杂度 ---------------- */
+  function runComplexity() {
+    var conf = cfg();
+    var qLen = conf.mode === 'cross' ? conf.targetTokens.length : conf.tokens.length;
+    var kLen = conf.tokens.length;
+    var cells = qLen * kLen;
+    var lens = [], quad = [];
+    for (var L = 2; L <= 16; L++) { lens.push(L); quad.push(L * L); }
+    var chart = V.lineChart([
+      { label: '自注意力分数格数 n²', values: quad, color: '#4f46e5' }
+    ], { xLabels: lens.map(String), xAxis: '序列长度 n', ymin: 0, ymax: 256, width: 640, height: 240 });
+    var samples = [2, 8, 16, 64, 512, 1024];
+    var rows = samples.map(function (n) {
+      return '<tr><td>' + n + '</td><td>' + (n * n).toLocaleString() + '</td><td>' +
+        M.fmt((n * n) / (cells || 1), 1) + '×</td></tr>';
+    }).join('');
+    return '<p class="lab-intro">自注意力要为每对 Query/Key 算一个分数：单头 n×n，h 头合计 h·n²。' +
+      '下面以当前配置（Query 长度 ' + qLen + '，Key 长度 ' + kLen + '，注意力矩阵 ' + qLen + '×' + kLen +
+      ' = ' + cells + ' 格）作参照，观察分数格数怎样随序列长度平方增长。</p>' +
+      '<div class="lab-grid"><div class="lab-panel"><h4>n 从 2 到 16：分数格数 n²</h4>' + chart + '</div>' +
+      '<div class="lab-panel"><h4>更长序列的格数</h4>' +
+      '<table class="matrix-table"><thead><tr><th>n</th><th>n² 格</th><th>相对当前</th></tr></thead><tbody>' +
+      rows + '</tbody></table><div class="lab-metric">当前配置：' + qLen + ' × ' + kLen + ' = ' + cells + ' 格</div></div></div>' +
+      '<div class="lab-warn">[论文] Table 1：自注意力层复杂度 O(n²·d)，循环层 O(n·d²)，逐位置 FFN O(n·d²)。' +
+      '当 n &lt; d 时自注意力更省；n 很大时 n² 成为主要瓶颈，稀疏注意力与线性注意力都为了绕开这一项。' +
+      '本页玩具规模 n ≤ 12，平方项尚不明显；把 n 换成 2048 就能看出量级。</div>';
+  }
+
   /* ---------------- 渲染 ---------------- */
   function tabs() {
     $('labTabs').innerHTML = EXPERIMENTS.map(function (e) {
@@ -189,7 +218,9 @@
   }
   function run() {
     try {
-      var fn = { pe: runPE, mask: runMask, heads: runHeads, scale: runScale }[state.active];
+      var fn = {
+        pe: runPE, mask: runMask, heads: runHeads, scale: runScale, complexity: runComplexity
+      }[state.active];
       $('labBody').innerHTML = fn();
       state.dirty = false;
       tabs();

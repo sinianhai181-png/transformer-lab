@@ -66,6 +66,7 @@ code { font-family: var(--mono); font-size: .92em; background: #f1f5f9; padding:
 }
 .card-head { display: flex; align-items: center; gap: 9px; margin-bottom: 13px; }
 .card-head.spread { justify-content: space-between; }
+.head-actions { display: flex; align-items: center; gap: 10px; flex: none; }
 .card-head h2 { font-size: 14.5px; font-weight: 700; }
 .card-head-inline { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
 .card-head .num {

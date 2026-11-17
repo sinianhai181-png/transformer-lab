@@ -220,6 +220,31 @@
   }
 
   /* ---------------- 导入导出 ---------------- */
+  function exportPanorama() {
+    var svg = $('panorama').querySelector('svg');
+    if (!svg) return;
+    var clone = svg.cloneNode(true);
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    var style = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+    style.textContent = [
+      '.pano-label{font:600 12px "Segoe UI","Microsoft YaHei",sans-serif;fill:#475569}',
+      '.pano-small{font:10.5px "Segoe UI","Microsoft YaHei",sans-serif;fill:#94a3b8}',
+      '.pano-title{font:700 13px "Segoe UI","Microsoft YaHei",sans-serif;fill:#1e293b}',
+      '.pano-group{fill:#f8fafc;stroke:#e2e8f0;stroke-dasharray:4 3}',
+      '.pano-edge{stroke:#cbd5e1;stroke-width:1.6;fill:none;marker-end:url(#tmArrow)}',
+      '.pano-node{cursor:pointer}',
+      '.pano-node.active rect{stroke:#4f46e5;stroke-width:2.5}',
+      '.pano-node.active .pano-label{fill:#4f46e5}'
+    ].join('');
+    clone.insertBefore(style, clone.firstChild);
+    var text = '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(clone);
+    var blob = new Blob([text], { type: 'image/svg+xml;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'transformer-panorama-' + state.config.mode + '.svg';
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  }
   function exportConfig() {
     var payload = { version: E.version, config: state.config, weights: state.model.weights };
     var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -282,6 +307,7 @@
       $('presetHint').textContent = '已恢复为标准 Xavier 初始化。';
     });
     $('btnExport').addEventListener('click', exportConfig);
+    $('btnExportSvg').addEventListener('click', exportPanorama);
     $('btnImport').addEventListener('click', function () { $('importFile').click(); });
     $('importFile').addEventListener('change', function (e) { if (e.target.files[0]) importConfig(e.target.files[0]); });
 
