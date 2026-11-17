@@ -11,7 +11,7 @@ function boot() {
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   const dom = new JSDOM(html, { runScripts: 'dangerously', url: 'file:///transformer-lab/index.html' });
   const w = dom.window;
-  ['js/engine.js', 'js/visualizer.js', 'js/lab.js', 'js/app.js'].forEach(function (f) {
+  ['js/engine.js', 'js/visualizer.js', 'js/lab.js', 'js/advanced.js', 'js/app.js'].forEach(function (f) {
     w.eval(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   });
   w.document.dispatchEvent(new w.Event('DOMContentLoaded'));
@@ -99,6 +99,35 @@ exports.run = function (t) {
     t.ok(html.length > 100 && html.indexOf('实验运行失败') < 0, '实验 ' + id + ' 正常渲染');
   });
   t.ok(doc.getElementById('labBody').innerHTML.indexOf('n²') >= 0, '复杂度实验显示 n² 曲线说明');
+
+  t.group('界面 · 进阶实验室');
+
+  t.ok(!!w.TMAdv, '进阶模块已加载');
+  t.eq(w.TMAdv.topics.length, 9, '进阶实验室包含九个主题');
+  w.TMAdv.topics.forEach(function (id) {
+    const b = doc.querySelector('#advTabs .adv-tab[data-id="' + id + '"]');
+    fire(w, b, 'click');
+    const html = doc.getElementById('advBody').innerHTML;
+    t.ok(html.length > 150 && html.indexOf('主题运行失败') < 0, '进阶主题 ' + id + ' 正常渲染');
+  });
+
+  const flashTab = doc.querySelector('#advTabs .adv-tab[data-id="flash"]');
+  fire(w, flashTab, 'click');
+  fire(w, doc.getElementById('advFlashNext'), 'click');
+  t.ok(doc.getElementById('advBody').innerHTML.indexOf('第 2 / 4 步') >= 0, 'FlashAttention 分步按钮生效');
+
+  const kvTab = doc.querySelector('#advTabs .adv-tab[data-id="kv"]');
+  fire(w, kvTab, 'click');
+  t.ok(doc.getElementById('advBody').innerHTML.indexOf('KV Cache') >= 0, 'KV Cache 主题显示标题与说明');
+
+  const lensTab = doc.querySelector('#advTabs .adv-tab[data-id="logitlens"]');
+  fire(w, lensTab, 'click');
+  t.ok(doc.getElementById('advBody').innerHTML.indexOf('Logit Lens') >= 0, 'Logit Lens 主题显示说明');
+
+  const circuitTab = doc.querySelector('#advTabs .adv-tab[data-id="circuits"]');
+  fire(w, circuitTab, 'click');
+  const circuitHtml = doc.getElementById('advBody').innerHTML;
+  t.ok(circuitHtml.indexOf('NaN') < 0 && circuitHtml.indexOf('OV 有效矩阵') >= 0, 'QK/OV 有效矩阵均为有效数值');
 
   w.TMApp.pause();
   w.close();

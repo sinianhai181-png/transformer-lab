@@ -25,7 +25,7 @@ npm install
 npm test
 ```
 
-当前测试：**80 项全部通过**，覆盖矩阵运算、位置编码、掩码、形状不变量、可编辑权重、序列化，以及界面初始化、参数联动、播放器、权重编辑、五个实验与结构图导出。
+当前测试：**95 项全部通过**，覆盖矩阵运算、位置编码、掩码、形状不变量、可编辑权重、序列化，以及界面初始化、参数联动、播放器、权重编辑、五个对照实验、九个进阶主题与结构图导出。
 
 ## 界面预览
 
@@ -45,9 +45,13 @@ npm test
 | --- | --- |
 | ![权重编辑器](docs/assets/05-weight-editor.png) | ![多头分工](docs/assets/06-experiments.png) |
 
-| 首屏总览 | |
+| 进阶实验室 · 架构族对照 | 进阶实验室 · QK/OV 电路 |
 | --- | --- |
-| ![首屏总览](docs/assets/01-overview.png) | |
+| ![架构族对照](docs/assets/08-advanced-architecture.png) | ![QK/OV 电路](docs/assets/09-advanced-circuits.png) |
+
+| 进阶实验室 · 注意力≠解释 | 首屏总览 |
+| --- | --- |
+| ![注意力≠解释](docs/assets/10-advanced-explanation.png) | ![首屏总览](docs/assets/01-overview.png) |
 
 ## 能改什么
 
@@ -65,6 +69,7 @@ npm test
 - **张量数值**：每步显示完整矩阵、张量形状、公式、来源标注（`[论文]` / `[实现]` / `[解读]`）和一句解释。
 - **注意力热力图**：行是 Query 位置、列是 Key 位置，悬停查看具体权重；分数矩阵用发散色，注意力权重用单色深浅。
 - **五个对照实验**：位置编码消融、因果掩码对比、多头分工、缩放与温度、注意力复杂度 `O(n²)`。
+- **进阶实验室**：九个可交互主题——架构族对照、Modern Block、注意力≠解释、FlashAttention、KV Cache、RoPE/ALiBi、QK/OV 电路、归纳头、Logit Lens。每个主题都标出论文、实现或解读等级，详见 [docs/ADVANCED.md](docs/ADVANCED.md)。
 
 ## 严谨性：资料等级与标注
 
@@ -82,7 +87,7 @@ npm test
 - 论文写掩码为 `−∞`，实现用 `−1e9` 近似。
 - "注意力权重 = 模型在关注什么"只是软路由，不是因果解释证据。
 
-完整的 Transformer 知识整理见 [docs/TRANSFORMER.md](docs/TRANSFORMER.md)，公式推导见 [docs/MATH.md](docs/MATH.md)，实验说明见 [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md)，贡献约定见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+完整的 Transformer 知识整理见 [docs/TRANSFORMER.md](docs/TRANSFORMER.md)，进阶主题与一手来源见 [docs/ADVANCED.md](docs/ADVANCED.md)，公式推导见 [docs/MATH.md](docs/MATH.md)，实验说明见 [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md)，贡献约定见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 目录结构
 
@@ -94,12 +99,14 @@ transformer-lab/
 ├── js/visualizer.js        # 全景 SVG、矩阵表、热力图、折线图
 ├── js/app.js               # 控件联动、播放器、权重编辑、导入导出
 ├── js/lab.js               # 五个对照实验
+├── js/advanced.js          # 九个进阶主题
 ├── tests/
 │   ├── engine.test.js      # 数值与不变量
 │   ├── dom.test.js         # 界面交互
 │   └── run-all.js          # 测试入口
 ├── docs/
 │   ├── TRANSFORMER.md       # Transformer 系统整理：论文、实现、变体与澄清
+│   ├── ADVANCED.md          # 九个进阶主题、一手来源与边界
 │   ├── MATH.md              # 公式与维度推导
 │   ├── EXPERIMENTS.md       # 实验说明
 │   └── assets/              # 真实浏览器截图
@@ -113,7 +120,8 @@ transformer-lab/
 
 - 这是**教学玩具规模**（d_model 4/8/16，层数 1–3），不追求语言建模能力；输出概率是词表内的演示值，不是训练好的模型。
 - 不做反向传播与训练。若要学"权重是怎么学出来的"，请用姊妹项目 BP 实验台。
-- 没有 batch 维、没有 dropout、没有 KV Cache；这些在界面说明里标注为省略项。
+- 主引擎没有 batch 维、没有 dropout、没有 KV Cache；进阶实验室的 KV Cache、RoPE、GQA 等是独立演示，不改变主前向结果。
+- RMSNorm、SwiGLU 等现代组件没有进入主引擎；它们只在「Modern Block」主题中与论文结构做对照。
 - FFN 的 γ/β、LayerNorm 的可学习参数固定为 1/0；位置编码的"可学习"模式是固定随机查表，不参与训练。
 - 权重编辑器暴露的是每个头的 Q/K/V 投影；`Wᴼ`、FFN 权重和 embedding 由随机种子决定，可复现但不可在界面逐格修改。
 

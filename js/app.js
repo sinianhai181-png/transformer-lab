@@ -85,6 +85,7 @@
     renderChips();
     setStep(state.stepIndex);
     if (window.TMLab) window.TMLab.invalidate();
+    if (window.TMAdv) window.TMAdv.invalidate();
   }
 
   function renderChips() {
@@ -314,6 +315,7 @@
     recompute(false);
     $('presetHint').textContent = E.WEIGHT_PRESETS[preset.value].desc;
     if (window.TMLab) window.TMLab.run();
+    if (window.TMAdv) window.TMAdv.run();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
