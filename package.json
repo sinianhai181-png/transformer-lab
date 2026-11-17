@@ -1,0 +1,14 @@
+{
+  "name": "transformer-visual-lab",
+  "version": "1.0.0",
+  "private": true,
+  "description": "零依赖的 Transformer 交互式教学实验室：可编辑 Q/K/V 权重、逐环节展示张量、三种注意力对照与四个消融实验",
+  "scripts": {
+    "test": "node tests/run-all.js"
+  },
+  "devDependencies": {
+    "jsdom": "^24.0.0"
+  },
+  "license": "MIT",
+  "author": "sinianhai181-png"
+}

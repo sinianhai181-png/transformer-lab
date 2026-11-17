@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transformer 可视化实验室 · 逐环节拆解注意力机制</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">TR</div>
+    <div class="brand-text">
+      <h1>Transformer 可视化实验室</h1>
+      <p>可编辑 Q/K/V 权重 · 逐环节展示张量 · 三种注意力机制对照 · 论文与实现差异标注</p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <span id="statusBadge" class="badge badge-ok">配置就绪</span>
+    <button class="btn btn-ghost" id="btnExport" type="button">导出配置</button>
+    <button class="btn btn-ghost" id="btnImport" type="button">导入配置</button>
+    <input type="file" id="importFile" accept="application/json,.json" hidden>
+  </div>
+</header>
+
+<main class="layout">
+  <!-- ==================== 左侧配置 ==================== -->
+  <aside class="sidebar">
+
+    <section class="card" id="configCard">
+      <div class="card-head"><span class="num">1</span><h2>输入序列与模型结构</h2></div>
+      <label>源序列 token（空格分隔）
+        <input type="text" id="srcTokens" value="I love transformer" spellcheck="false">
+      </label>
+      <label class="mt">目标序列 token（decoder / cross 使用）
+        <input type="text" id="tgtTokens" value="&lt;s&gt; I love" spellcheck="false">
+      </label>
+      <p class="hint"> decoder 输入按论文右移一位：<code>tgt[:, :-1]</code>；标签是 <code>tgt[:, 1:]</code>。</p>
+
+      <div class="form-row two mt">
+        <label>注意力模式
+          <select id="mode">
+            <option value="encoder">Encoder 自注意力（双向）</option>
+            <option value="decoder">Decoder 自注意力（因果掩码）</option>
+            <option value="cross">Encoder–Decoder 交叉注意力</option>
+          </select>
+        </label>
+        <label>模型维度 d_model
+          <select id="dModel">
+            <option value="4">4 · 极简演示</option>
+            <option value="8" selected>8 · 推荐</option>
+            <option value="16">16 · 更接近真实</option>
+          </select>
+        </label>
+      </div>
+      <div class="form-row two">
+        <label>注意力头数 h
+          <select id="heads">
+            <option value="1">1 · 单头</option>
+            <option value="2" selected>2 · 多头</option>
+            <option value="4">4 · 多头</option>
+          </select>
+        </label>
+        <label>FFN 维度 d_ff
+          <input type="number" id="dff" min="2" max="64" step="1" value="16">
+        </label>
+      </div>
+      <div class="form-row two">
+        <label>堆叠层数 N
+          <select id="layers">
+            <option value="1" selected>1 层</option>
+            <option value="2">2 层</option>
+            <option value="3">3 层</option>
+          </select>
+        </label>
+        <label>随机种子
+          <input type="number" id="seed" min="1" max="999999" step="1" value="7">
+        </label>
+      </div>
+      <p class="hint" id="shapeSummary"></p>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><span class="num">2</span><h2>机制开关</h2></div>
+      <div class="form-row two">
+        <label>位置编码
+          <select id="pe">
+            <option value="sinusoidal">正弦绝对编码（论文）</option>
+            <option value="learned">可学习位置编码</option>
+            <option value="none">无位置编码</option>
+          </select>
+        </label>
+        <label>归一化位置
+          <select id="norm">
+            <option value="post">Post-Norm（原论文）</option>
+            <option value="pre">Pre-Norm（哈佛实现 / 现代）</option>
+          </select>
+        </label>
+      </div>
+      <div class="form-row two">
+        <label>FFN 激活
+          <select id="ffnAct">
+            <option value="relu">ReLU（论文）</option>
+            <option value="gelu">GELU（现代常见）</option>
+          </select>
+        </label>
+        <label>温度 T
+          <input type="number" id="temperature" min="0.1" max="5" step="0.1" value="1">
+        </label>
+      </div>
+      <label class="check mt">
+        <input type="checkbox" id="scale" checked>
+        <span>缩放点积：除以 √d_k <small>论文脚注：控制内积方差，防止 softmax 饱和</small></span>
+      </label>
+      <p class="hint" id="mechanismHint"></p>
+    </section>
+
+    <section class="card" id="weightCard">
+      <div class="card-head spread">
+        <div class="card-head-inline"><span class="num">3</span><h2>权重编辑器</h2></div>
+        <button class="btn btn-mini" id="btnResetWeights" type="button">恢复随机</button>
+      </div>
+      <p class="hint">手改矩阵数字，或选一个规律预设，再点「应用」观察热力图变化。</p>
+      <div class="head-tabs" id="headTabs"></div>
+      <label class="mt">权重规律预设
+        <select id="presetSelect"></select>
+      </label>
+      <div id="weightGrid" class="weight-grid"></div>
+      <div class="btn-row mt">
+        <button class="btn btn-primary" id="btnApplyWeights" type="button">应用权重并重算</button>
+        <button class="btn btn-ghost" id="btnFillPreset" type="button">填入预设</button>
+      </div>
+      <p class="hint" id="presetHint"></p>
+    </section>
+
+    <section class="card source-card">
+      <div class="card-head"><span class="num">4</span><h2>资料来源</h2></div>
+      <p class="hint">全部公式与实现细节依据一手资料整理，标注约定：</p>
+      <p class="hint"><b>[论文]</b> Vaswani et al., <i>Attention Is All You Need</i>, arXiv:1706.03762v7.</p>
+      <p class="hint"><b>[实现]</b> Harvard NLP, <i>The Annotated Transformer</i>.</p>
+      <p class="hint"><b>[解读]</b> 学界常见解释，论文未直接论证，界面中单独标出。</p>
+    </section>
+  </aside>
+
+  <!-- ==================== 右侧工作区 ==================== -->
+  <div class="workspace">
+
+    <section class="card" id="panoramaCard">
+      <div class="card-head spread">
+        <div class="card-head-inline"><h2>模型全景结构</h2><span class="subtitle">点击模块查看对应计算步骤</span></div>
+        <span class="stat" id="panoramaStat">—</span>
+      </div>
+      <div id="panorama" class="panorama"></div>
+    </section>
+
+    <section class="card" id="stepCard">
+      <div class="card-head spread">
+        <div class="card-head-inline"><h2>逐环节演示</h2><span class="subtitle" id="stepCounter">—</span></div>
+        <div class="player">
+          <button class="btn btn-mini" id="btnFirst" type="button" title="回到第一步">⏮ 首步</button>
+          <button class="btn btn-mini" id="btnPrev" type="button">◀ 上一步</button>
+          <button class="btn btn-primary btn-mini" id="btnPlay" type="button">▶ 自动播放</button>
+          <button class="btn btn-mini" id="btnNext" type="button">下一步 ▶</button>
+        </div>
+      </div>
+      <div class="step-chips" id="stepChips"></div>
+      <div class="step-info">
+        <div class="step-info-main">
+          <h3 id="stepTitle">—</h3>
+          <div class="formula" id="stepFormula">—</div>
+          <p class="step-detail" id="stepDetail"></p>
+        </div>
+        <div class="step-meta">
+          <span class="stat" id="stepShape">—</span>
+          <span class="badge badge-source" id="stepSource">—</span>
+        </div>
+      </div>
+      <div class="step-body" id="stepBody"></div>
+    </section>
+
+    <section class="card" id="labCard">
+      <div class="card-head spread">
+        <div class="card-head-inline"><h2>拓展实验台</h2><span class="subtitle">用同一组权重做对照，观察单一变量的影响</span></div>
+        <button class="btn btn-primary btn-mini" id="btnRunLab" type="button">运行当前实验</button>
+      </div>
+      <div class="lab-tabs" id="labTabs"></div>
+      <div class="lab-body" id="labBody"></div>
+    </section>
+
+  </div>
+</main>
+
+<div class="tooltip" id="tooltip" hidden></div>
+
+<script src="js/engine.js"></script>
+<script src="js/visualizer.js"></script>
+<script src="js/lab.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
