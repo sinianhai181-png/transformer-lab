@@ -253,6 +253,23 @@ select { cursor: pointer; }
 .adv-flow span { background: #f1f5f9; border: 1px solid var(--line); border-radius: 6px; padding: 4px 7px; }
 .adv-flow b { color: var(--primary); }
 
+/* ---- 论文清单 ---- */
+.paper-list { display: flex; flex-direction: column; gap: 14px; margin-top: 10px; }
+.paper-group h4 { font-size: 12px; color: var(--purple); margin: 0 0 7px; padding-bottom: 5px; border-bottom: 1px solid var(--line-soft); }
+.paper-items { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 8px; }
+.paper-item { border: 1px solid var(--line-soft); border-radius: 9px; padding: 9px 11px; background: #fff; min-width: 0; }
+.paper-head { display: flex; gap: 8px; align-items: flex-start; justify-content: space-between; }
+.paper-head a { font-size: 12px; font-weight: 600; line-height: 1.45; text-decoration: none; }
+.paper-head a:hover { text-decoration: underline; }
+.paper-badge { flex: none; font-size: 10px; color: var(--primary); background: var(--primary-soft); border-radius: 5px; padding: 1px 6px; }
+.paper-meta { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 4px; }
+.paper-claim { font-size: 11.5px; color: var(--ink-2); line-height: 1.6; margin-top: 5px; }
+.paper-note { font-size: 10.5px; color: #b45309; background: #fffbeb; border-radius: 5px; padding: 4px 7px; margin-top: 5px; }
+.paper-actions { display: flex; gap: 10px; align-items: center; margin-top: 7px; font-size: 10.5px; }
+.paper-actions a { text-decoration: none; }
+.paper-jump { border: 1px solid #c7d2fe; color: var(--primary); background: var(--primary-soft); border-radius: 5px; padding: 2px 8px; font-size: 10.5px; cursor: pointer; }
+.paper-jump:hover { background: #e0e7ff; }
+
 /* ---- 悬浮提示 ---- */
 .tooltip {
   position: fixed; z-index: 50; pointer-events: none; padding: 6px 10px;

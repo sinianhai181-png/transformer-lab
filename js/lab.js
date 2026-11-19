@@ -1,6 +1,7 @@
 /* =============================================================
  * Transformer 可视化实验室 · 拓展实验台
- * 五个对照实验：位置编码消融 / 因果掩码 / 多头分工 / 缩放与温度 / 注意力复杂度
+ * 七个对照实验：位置编码消融 / 因果掩码 / 多头分工 / 缩放与温度 /
+ * 注意力复杂度 / point-adjust 评测陷阱 / 关联差异异常检测
  * 原则：固定同一组权重，只改变被研究的那个变量。
  * ============================================================= */
 (function () {
@@ -14,9 +15,15 @@
     { id: 'mask', label: '因果掩码对比' },
     { id: 'heads', label: '多头分工' },
     { id: 'scale', label: '缩放与温度' },
-    { id: 'complexity', label: '注意力复杂度' }
+    { id: 'complexity', label: '注意力复杂度' },
+    { id: 'pointadjust', label: 'Point-Adjust 陷阱' },
+    { id: 'assoc', label: '关联差异检测' }
   ];
-  var state = { active: 'pe', dirty: true, report: null };
+  var state = {
+    active: 'pe', dirty: true, report: null,
+    paSeed: 7, paThreshold: 0.9, paRatio: 0.08,
+    assocSigma: 0.8, assocAnomaly: 6
+  };
 
   function cfg() { return window.TMApp.state().config; }
   function model() { return window.TMApp.state().weights; }
@@ -203,6 +210,214 @@
       '本页玩具规模 n ≤ 12，平方项尚不明显；把 n 换成 2048 就能看出量级。</div>';
   }
 
+  /* ---------------- 实验 6：point-adjust 评测陷阱 ----------------
+   * PA 协议：某个真实异常段内若有点被检出，则整段所有点都计为检出。
+   * 用均匀随机分数（与真值无关）演示 F1 如何被抬高。
+   * [论文] Kim et al. 2022, arXiv:2109.05257：随机分数在 PA 下可成为 SOTA。
+   * [解读] 本页是机制复现，数据为合成，不代表任何真实模型的检测结果。
+   */
+  function f1FromCounts(tp, fp, fn) {
+    var p = tp + fp ? tp / (tp + fp) : 0;
+    var r = tp + fn ? tp / (tp + fn) : 0;
+    return { precision: p, recall: r, f1: (p + r ? 2 * p * r / (p + r) : 0) };
+  }
+  function countPR(y, pred) {
+    var tp = 0, fp = 0, fn = 0;
+    for (var i = 0; i < y.length; i++) {
+      if (pred[i] && y[i]) tp++;
+      else if (pred[i] && !y[i]) fp++;
+      else if (!pred[i] && y[i]) fn++;
+    }
+    return { tp: tp, fp: fp, fn: fn, metric: f1FromCounts(tp, fp, fn) };
+  }
+  function paSegments(n) {
+    var segs = [[8, 13], [28, 33], [48, 53]];
+    return segs.filter(function (s) { return s[1] < n; });
+  }
+  function paAdjust(pred, segs, n) {
+    var out = pred.slice();
+    segs.forEach(function (s) {
+      var hit = false;
+      for (var i = s[0]; i <= s[1]; i++) if (pred[i]) { hit = true; break; }
+      if (hit) for (var j = s[0]; j <= s[1]; j++) out[j] = 1;
+    });
+    return out;
+  }
+  function runPointAdjust() {
+    var n = 60, rng = E.mulberry32(state.paSeed);
+    var scores = [], y = new Array(n).fill(0);
+    var segs = paSegments(n);
+    segs.forEach(function (s) { for (var i = s[0]; i <= s[1]; i++) y[i] = 1; });
+    for (var k = 0; k < n; k++) scores.push(rng());
+
+    var thr = state.paThreshold;
+    var rawPred = scores.map(function (s) { return s >= thr ? 1 : 0; });
+    var paPred = paAdjust(rawPred, segs, n);
+    var raw = countPR(y, rawPred), adj = countPR(y, paPred);
+
+    var thresholds = [], rawF = [], paF = [];
+    for (var t = 0.3; t <= 0.951; t += 0.05) {
+      var tt = Math.round(t * 100) / 100;
+      var rp = scores.map(function (s) { return s >= tt ? 1 : 0; });
+      thresholds.push(tt.toFixed(2));
+      rawF.push(countPR(y, rp).metric.f1);
+      paF.push(countPR(y, paAdjust(rp, segs, n)).metric.f1);
+    }
+    var f1Chart = V.lineChart([
+      { label: '逐点 F1（无 PA）', values: rawF, color: '#ef4444' },
+      { label: 'PA 之后 F1', values: paF, color: '#4f46e5' }
+    ], { xLabels: thresholds, xAxis: '判定阈值', ymin: 0, ymax: 1, width: 640, height: 250 });
+
+    var scoreChart = V.lineChart([
+      { label: '随机异常分数', values: scores, color: '#94a3b8' },
+      { label: '当前阈值 ' + thr.toFixed(2), values: scores.map(function () { return thr; }), color: '#f97316' }
+    ], { xAxis: '时间点 t（无 x 标签）', ymin: 0, ymax: 1, width: 640, height: 220 });
+
+    var segRows = segs.map(function (s, idx) {
+      var hit = false, before = 0, after = 0;
+      for (var i = s[0]; i <= s[1]; i++) {
+        if (rawPred[i]) { hit = true; before++; }
+        if (paPred[i]) after++;
+      }
+      return '<tr><td>段 ' + (idx + 1) + '</td><td>[' + s[0] + ', ' + s[1] + ']</td><td>' + (s[1] - s[0] + 1) +
+        '</td><td>' + before + '</td><td>' + after + '</td><td>' + (hit ? '命中→整段补齐' : '未命中') + '</td></tr>';
+    }).join('');
+
+    var html = '<p class="lab-intro">Point Adjustment（PA）：某个真实异常段内只要有一个点被检出，整段所有点都算检出。' +
+      '这里用一串<b>与真值完全无关的均匀随机分数</b>做异常分数，观察 F1 怎样被协议本身抬高。' +
+      '异常段为 ' + segs.map(function (s) { return '[' + s[0] + ',' + s[1] + ']'; }).join(' / ') + '，共 ' +
+      y.filter(function (v) { return v; }).length + ' / ' + n + ' 个点。</p>' +
+      '<div class="lab-controls">' +
+      '<label>随机种子 <input type="number" id="paSeed" min="1" max="999999" step="1" value="' + state.paSeed + '"></label>' +
+      '<label>判定阈值 <input type="number" id="paThr" min="0.3" max="0.95" step="0.05" value="' + thr.toFixed(2) + '"></label>' +
+      '</div>' +
+      '<div class="lab-grid">' +
+      '<div class="lab-panel"><h4>随机分数与阈值（分数不含任何异常信息）</h4>' + scoreChart + '</div>' +
+      '<div class="lab-panel"><h4>不同阈值下的 F1</h4>' + f1Chart + '</div></div>' +
+      '<div class="lab-grid" style="margin-top:10px">' +
+      '<div class="lab-panel"><h4>当前阈值 ' + thr.toFixed(2) + ' · 逐点（无 PA）</h4>' +
+      '<div class="lab-metric">Precision ' + M.fmt(raw.metric.precision, 3) + ' · Recall ' + M.fmt(raw.metric.recall, 3) +
+      ' · F1 ' + M.fmt(raw.metric.f1, 3) + '</div>' +
+      '<div class="lab-metric">TP ' + raw.tp + ' · FP ' + raw.fp + ' · FN ' + raw.fn + '</div></div>' +
+      '<div class="lab-panel"><h4>当前阈值 ' + thr.toFixed(2) + ' · PA 之后</h4>' +
+      '<div class="lab-metric">Precision ' + M.fmt(adj.metric.precision, 3) + ' · Recall ' + M.fmt(adj.metric.recall, 3) +
+      ' · F1 ' + M.fmt(adj.metric.f1, 3) + '</div>' +
+      '<div class="lab-metric">TP ' + adj.tp + ' · FP ' + adj.fp + ' · FN ' + adj.fn + '</div></div></div>' +
+      '<table class="matrix-table" style="margin-top:10px"><thead><tr><th>异常段</th><th>区间</th><th>点数</th><th>PA前检出</th><th>PA后检出</th><th>处理</th></tr></thead><tbody>' +
+      segRows + '</tbody></table>' +
+      '<div class="lab-warn">[论文] Kim et al. 2022（arXiv:2109.05257）指出 PA 会让随机异常分数也可能成为最先进方法；' +
+      'Anomaly Transformer 官方仓库声明其评估使用了 adjustment 操作。两侧表述并列登记，本页不对模型孰优孰劣下结论。<br>' +
+      '[解读] 本实验分数为合成随机数，只演示 PA 的放大机制。F1 的提升来自评测协议，不是检测能力。' +
+      '真实基准的 PA%K 定义与原文协议细节标注为待核验，核验路径见 docs/PAPERS.md。</div>';
+
+    if (state.active === 'pointadjust') {
+      var ps = $('paSeed'), pt = $('paThr');
+      if (ps) ps.addEventListener('change', function () {
+        state.paSeed = Math.max(1, Number(ps.value) || 1); run();
+      });
+      if (pt) pt.addEventListener('change', function () {
+        state.paThreshold = Math.min(0.95, Math.max(0.3, Number(pt.value) || 0.9)); run();
+      });
+    }
+    return html;
+  }
+
+  /* ---------------- 实验 7：关联差异异常检测 ----------------
+   * [论文] Anomaly Transformer, arXiv:2110.02642：异常点难以和全序列建立
+   * 非平凡关联，其关联集中在相邻点；用「先验关联 vs 序列关联」的差异判异常。
+   * 本页在当前权重上注入一个人造异常点，观察对称 KL 差异如何响应。
+   */
+  function gaussianPrior(n, center, sigma) {
+    var row = [], sum = 0;
+    for (var j = 0; j < n; j++) {
+      var d = (j - center) / sigma;
+      var v = Math.exp(-0.5 * d * d);
+      row.push(v); sum += v;
+    }
+    return row.map(function (v) { return v / sum; });
+  }
+  function symKL(P, Q) {
+    var eps = 1e-10, s = 0;
+    for (var i = 0; i < P.length; i++) {
+      var p = Math.max(P[i], eps), q = Math.max(Q[i], eps);
+      s += p * Math.log(p / q) + q * Math.log(q / p);
+    }
+    return s;
+  }
+  function runAssoc() {
+    var n = 16;
+    var anomaly = Math.min(n - 1, Math.max(0, state.assocAnomaly));
+    var sigma = state.assocSigma;
+
+    /* 构造数据：正常点的序列关联 ≈ 高斯先验；异常点只集中在相邻 2 个位置。
+       这是论文机制的干净示意，故意不依赖随机权重，保证可复现。 */
+    var A = [], P = [], disc = [];
+    for (var i = 0; i < n; i++) {
+      var prior = gaussianPrior(n, i, sigma);
+      P.push(prior);
+      var series;
+      if (i === anomaly) {
+        series = new Array(n).fill(0.001);
+        series[i] = 0.5;
+        if (i > 0) series[i - 1] = 0.25;
+        if (i < n - 1) series[i + 1] = 0.25;
+        var s1 = series.reduce(function (a, b) { return a + b; }, 0);
+        series = series.map(function (v) { return v / s1; });
+      } else {
+        series = prior.slice();
+      }
+      A.push(series);
+      disc.push(symKL(prior, series));
+    }
+    var top = 0;
+    for (var t = 1; t < n; t++) if (disc[t] > disc[top]) top = t;
+    var hit = top === anomaly;
+    var labels = [];
+    for (var q = 0; q < n; q++) labels.push(q === anomaly ? '★' + q : String(q));
+
+    var discChart = V.lineChart([
+      { label: '对称 KL（先验 vs 序列关联）', values: disc, color: '#7c3aed' }
+    ], { xLabels: labels, xAxis: '查询位置（★为注入异常点）', ymin: 0, autoMax: true, width: 640, height: 250 });
+
+    var rows = '';
+    for (var r = 0; r < n; r++) {
+      rows += '<tr><td>' + (r === anomaly ? '★' : '') + r + '</td><td>' + M.fmt(disc[r], 4) +
+        '</td><td>' + (r === top ? '最大差异' : '') + '</td></tr>';
+    }
+
+    var html = '<p class="lab-intro">论文判据：正常点能与整段序列建立平滑（近高斯）关联；异常点因稀有，关联只能集中在相邻点，' +
+      '与先验的差距被放大。下面用一段 <b>构造数据</b>（长度 ' + n + '）：正常点的序列关联取高斯先验，' +
+      '位置 <b>' + anomaly + '</b> 的序列关联改为集中在自身与相邻点，再逐行比较对称 KL。</p>' +
+      '<div class="lab-controls">' +
+      '<label>先验宽度 σ <input type="number" id="assocSigma" min="0.4" max="3" step="0.1" value="' + sigma.toFixed(1) + '"></label>' +
+      '<label>注入异常位置 <input type="number" id="assocAnomaly" min="0" max="' + (n - 1) + '" step="1" value="' + anomaly + '"></label>' +
+      '</div>' +
+      '<div class="lab-grid">' +
+      '<div class="lab-panel"><h4>序列关联 A（构造，异常点局部集中）</h4>' + smallHeat(A, labels, labels) + '</div>' +
+      '<div class="lab-panel"><h4>先验关联 P（高斯，σ=' + sigma.toFixed(1) + '）</h4>' + smallHeat(P, labels, labels) + '</div></div>' +
+      '<div class="lab-panel" style="margin-top:10px"><h4>关联差异（对称 KL）</h4>' + discChart +
+      '<div class="lab-metric">最大差异位置 = ' + top + ' · 注入位置 = ' + anomaly + ' · ' +
+      (hit ? '成功定位' : '未定位（σ 过大或过小）') + '</div></div>' +
+      '<table class="matrix-table" style="margin-top:10px"><thead><tr><th>位置</th><th>对称 KL</th><th>标记</th></tr></thead><tbody>' +
+      rows + '</tbody></table>' +
+      '<div class="lab-warn">[论文] Anomaly Transformer（Xu et al. 2021, arXiv:2110.02642）用可学习 σ 的高斯先验与注意力序列关联的对称 KL 作为异常分数，' +
+      '并用 minimax 训练放大正常/异常的可分性。<br>' +
+      '[解读] 本页使用构造数据、固定 σ、不训练，只演示「关联差异如何标记异常」这一机制；' +
+      'A 与 P 均为示意值，不是任何模型的真实注意力，也不构成检测准确率证据。' +
+      '供水漏水的真实性能请以 [PAPERS.md](docs/PAPERS.md) 收录的一手论文为准，不要引用本玩具实验的任何数字。</div>';
+
+    if (state.active === 'assoc') {
+      var sig = $('assocSigma'), ano = $('assocAnomaly');
+      if (sig) sig.addEventListener('change', function () {
+        state.assocSigma = Math.min(3, Math.max(0.4, Number(sig.value) || 0.8)); run();
+      });
+      if (ano) ano.addEventListener('change', function () {
+        state.assocAnomaly = Math.min(n - 1, Math.max(0, Number(ano.value) || 0)); run();
+      });
+    }
+    return html;
+  }
+
   /* ---------------- 渲染 ---------------- */
   function tabs() {
     $('labTabs').innerHTML = EXPERIMENTS.map(function (e) {
@@ -219,7 +434,8 @@
   function run() {
     try {
       var fn = {
-        pe: runPE, mask: runMask, heads: runHeads, scale: runScale, complexity: runComplexity
+        pe: runPE, mask: runMask, heads: runHeads, scale: runScale, complexity: runComplexity,
+        pointadjust: runPointAdjust, assoc: runAssoc
       }[state.active];
       $('labBody').innerHTML = fn();
       state.dirty = false;
@@ -229,9 +445,20 @@
     }
   }
 
+  function selectExperiment(id) {
+    if (EXPERIMENTS.map(function (e) { return e.id; }).indexOf(id) < 0) return false;
+    state.active = id;
+    run();
+    var card = $('labCard');
+    if (card && card.scrollIntoView) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return true;
+  }
+
   window.TMLab = {
     invalidate: function () { state.dirty = true; },
-    run: run
+    run: run,
+    selectExperiment: selectExperiment,
+    experiments: EXPERIMENTS.map(function (e) { return e.id; })
   };
 
   function boot() {

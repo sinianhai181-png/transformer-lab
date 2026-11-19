@@ -11,7 +11,7 @@ function boot() {
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   const dom = new JSDOM(html, { runScripts: 'dangerously', url: 'file:///transformer-lab/index.html' });
   const w = dom.window;
-  ['js/engine.js', 'js/visualizer.js', 'js/lab.js', 'js/advanced.js', 'js/app.js'].forEach(function (f) {
+  ['js/engine.js', 'js/visualizer.js', 'js/lab.js', 'js/advanced.js', 'js/papers.js', 'js/app.js'].forEach(function (f) {
     w.eval(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   });
   w.document.dispatchEvent(new w.Event('DOMContentLoaded'));
@@ -24,7 +24,7 @@ exports.run = function (t) {
 
   const w = boot();
   const doc = w.document;
-  t.ok(!!w.TMApp && !!w.TMLab && !!w.TMVis, '三个全局模块均已加载');
+  t.ok(!!w.TMApp && !!w.TMLab && !!w.TMVis && !!w.TMAdv && !!w.TMPapers, '五个全局模块均已加载');
   const s0 = w.TMApp.state();
   t.ok(s0.config && s0.result && s0.steps.length >= 19, '首次加载完成前向计算');
   t.ok(doc.getElementById('stepBody').innerHTML.length > 0, '第一步数值面板已渲染');
@@ -88,17 +88,31 @@ exports.run = function (t) {
   t.ok(Wk.every(row => row[0] === 1), '预设权重填入并应用：W_K 第一列全 1');
   t.ok(doc.getElementById('stepBody').innerHTML.length > 0, '重算后数值面板仍正常渲染');
 
-  t.group('界面 · 五个实验');
+  t.group('界面 · 七个实验');
 
   const tabs = doc.querySelectorAll('#labTabs .lab-tab');
-  t.eq(tabs.length, 5, '实验台有五个实验标签');
-  ['pe', 'mask', 'heads', 'scale', 'complexity'].forEach(function (id) {
+  t.eq(tabs.length, 7, '实验台有七个实验标签');
+  ['pe', 'mask', 'heads', 'scale', 'complexity', 'pointadjust', 'assoc'].forEach(function (id) {
     const b = doc.querySelector('#labTabs .lab-tab[data-id="' + id + '"]');
     fire(w, b, 'click');
     const html = doc.getElementById('labBody').innerHTML;
     t.ok(html.length > 100 && html.indexOf('实验运行失败') < 0, '实验 ' + id + ' 正常渲染');
+    t.ok(html.indexOf('NaN') < 0, '实验 ' + id + ' 无 NaN');
   });
-  t.ok(doc.getElementById('labBody').innerHTML.indexOf('n²') >= 0, '复杂度实验显示 n² 曲线说明');
+  t.ok(doc.getElementById('labBody').innerHTML.indexOf('成功定位') >= 0, '关联差异实验成功定位注入异常点');
+  fire(w, doc.querySelector('#labTabs .lab-tab[data-id="pointadjust"]'), 'click');
+  const paMetrics = [...doc.querySelectorAll('#labBody .lab-metric')].map(function (m) { return m.textContent; });
+  t.ok(paMetrics.some(function (m) { return m.indexOf('F1') >= 0; }), 'point-adjust 实验显示 F1 对比');
+
+  t.group('界面 · 论文清单');
+
+  t.eq(w.TMPapers.count, 17, '论文清单收录 17 篇');
+  t.eq(doc.querySelectorAll('#paperList .paper-item').length, 17, '17 篇论文全部渲染');
+  t.eq(doc.querySelectorAll('#paperList .paper-group').length, 6, '按六个主题分组');
+  t.ok(doc.getElementById('paperList').innerHTML.indexOf('公开暂未披露') >= 0, '待核验字段如实标注');
+  t.ok(typeof w.TMLab.selectExperiment === 'function' && typeof w.TMAdv.selectTopic === 'function',
+    '论文跳转接口已暴露');
+  t.ok(w.TMLab.selectExperiment('pointadjust') && w.TMAdv.selectTopic('explanation'), '跳转到对应实验/主题成功');
 
   t.group('界面 · 进阶实验室');
 

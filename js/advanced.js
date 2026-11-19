@@ -422,9 +422,19 @@
     if (window.TMApp && window.TMApp.state().config) run();
   }
 
+  function selectTopic(id) {
+    if (TOPICS.map(function (t) { return t.id; }).indexOf(id) < 0) return false;
+    state.active = id;
+    run();
+    var card = $('advancedCard');
+    if (card && card.scrollIntoView) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return true;
+  }
+
   window.TMAdv = {
     invalidate: function () { state.dirty = true; },
     run: run,
+    selectTopic: selectTopic,
     topics: TOPICS.map(function (t) { return t.id; })
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
