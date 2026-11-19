@@ -89,6 +89,14 @@ npm test
 
 完整的 Transformer 知识整理见 [docs/TRANSFORMER.md](docs/TRANSFORMER.md)，进阶主题与一手来源见 [docs/ADVANCED.md](docs/ADVANCED.md)，公式推导见 [docs/MATH.md](docs/MATH.md)，实验说明见 [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md)，贡献约定见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
+### 论文素材与写作依据
+
+- [docs/PAPERS.md](docs/PAPERS.md)：17 篇一手论文素材，逐条标注来源主体、发布时间、原文链接与数据口径，覆盖原论文、异常检测方法、评测争议、注意力解释性与供水漏水期刊研究。
+- [docs/WRITING-MEMO.md](docs/WRITING-MEMO.md)：写作建议与分析推论（**非事实素材，不可作为数据引用**）。
+- [docs/RESEARCH-NOTES.md](docs/RESEARCH-NOTES.md)：采集口径规则、待核验条目与公开核验路径。
+
+三份文件按"事实 / 观点 / 过程说明"分区，互不混写。事实文档中并列登记了三处来源冲突：原论文 arXiv v7 与 NeurIPS 2017 摘要的 BLEU 数字差异、Anomaly Transformer 摘要基准数与官方仓库脚本数差异、point-adjust 评测协议争议。
+
 ## 目录结构
 
 ```
@@ -107,6 +115,9 @@ transformer-lab/
 ├── docs/
 │   ├── TRANSFORMER.md       # Transformer 系统整理：论文、实现、变体与澄清
 │   ├── ADVANCED.md          # 九个进阶主题、一手来源与边界
+│   ├── PAPERS.md            # 17 篇一手论文素材与数据口径
+│   ├── WRITING-MEMO.md      # 写作建议（非事实素材）
+│   ├── RESEARCH-NOTES.md    # 采集口径、局限与核验路径
 │   ├── MATH.md              # 公式与维度推导
 │   ├── EXPERIMENTS.md       # 实验说明
 │   └── assets/              # 真实浏览器截图

@@ -1,5 +1,11 @@
 # 更新日志
 
+## 1.1.1（2026-11-19）
+
+- 新增 `docs/PAPERS.md`：17 篇一手论文素材，逐条核对 arXiv / 会议官方页 / ScienceDirect 原文，标注来源主体、发布时间、原文链接与数据口径；覆盖异常检测、评测争议与供水漏水期刊研究。
+- 新增 `docs/WRITING-MEMO.md`（非事实素材）与 `docs/RESEARCH-NOTES.md`（口径规则、待核验条目与公开核验路径），按事实 / 观点 / 过程说明分区。
+- 并列登记三处来源冲突：原论文 arXiv v7 与 NeurIPS 2017 摘要 BLEU 差异、Anomaly Transformer 基准数量差异、point-adjust 评估协议争议。
+
 ## 1.1.0（2026-11-17）
 
 - 新增「进阶实验室」九个可交互主题：架构族对照、Modern Block、注意力≠解释、FlashAttention 分块、KV Cache、RoPE/ALiBi、QK/OV 电路、归纳头、Logit Lens。
