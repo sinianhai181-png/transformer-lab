@@ -21,7 +21,7 @@
       authors: 'Xu, Wu, Wang, Long', date: '2021-10-06', venue: 'ICLR 2022',
       url: 'https://arxiv.org/abs/2110.02642',
       claim: '以关联差异判异常：异常点难以与全序列建立非平凡关联，其关联集中在相邻时刻。',
-      level: '一级', note: 'Spotlight 等级为作者仓库自述（二级）；官方仓库声明评估使用 adjustment。',
+      level: '一级', note: '会议等级两源并列：ICLR 官方 poster 页标 2022 Poster，作者仓库自述 Spotlight；官方仓库声明评估使用 adjustment。',
       topic: 'lab:assoc'
     },
     {
@@ -29,7 +29,7 @@
       authors: 'Kim 等 5 人', date: '2021-09-11', venue: 'AAAI 2022',
       url: 'https://arxiv.org/abs/2109.05257',
       claim: 'point adjustment 协议可能高估检测性能，随机异常分数也可成为最先进方法。',
-      level: '一级', note: 'PA%K 具体定义未在摘要给出，待核验原文第 4 节。', topic: 'lab:pointadjust'
+      level: '一级', note: 'PA%K 定义已从原文 Section 4.2 核实：异常段内检出比例超 K 才触发 PA；K=0 等价原 PA，K=100 等价普通 F1。', topic: 'lab:pointadjust'
     },
     {
       id: 4, title: 'TranAD: Deep Transformer Networks for Anomaly Detection',
@@ -107,23 +107,23 @@
     {
       id: 15, title: 'Benchmarking Diverse Learning Architectures for Leak Detection and Localization',
       authors: 'Ranganathan, Vinothkumar, Muthuramalingam', date: 'May 2026',
-      venue: '期刊名公开暂未披露', url: 'https://sciencedirect.com/science/article/pii/S2214714426006720',
+      venue: 'Journal of Water Process Engineering, Vol.87, 110114', url: 'https://sciencedirect.com/science/article/pii/S2214714426006720',
       claim: 'Net3 仿真 47,000+ 样本：二分类漏检所有模型 >95%，定位 Top-1 约 75–77%，集成 ML 最稳。',
-      level: '一级', note: '仿真样本，非现场实测；三项数字口径不同，不可互比。', topic: ''
+      level: '一级', note: '仿真样本，非现场实测；三项数字口径不同，不可互比；DOI 公开暂未披露。', topic: ''
     },
     {
       id: 16, title: 'Dynamic Causal Graph Network for Reliable Pipeline Leak Detection',
-      authors: 'Zhang, Lu, Li, Bader', date: '公开暂未披露', venue: '期刊名公开暂未披露',
-      url: 'https://sciencedirect.com/science/article/pii/S095183202600606X',
+      authors: 'Zhang, Lu, Li, Bader', date: 'November 2026',
+      venue: 'Reliability Engineering & System Safety, Vol.275 Pt.2, 112795', url: 'https://sciencedirect.com/science/article/pii/S095183202600606X',
       claim: '用 Transformer 因果推断模块聚合长程证据；枝状 96.32%、环状 96.60% 准确率。',
-      level: '一级', note: '实验室尺度管道，与第 15 篇管网仿真不是同一数据基础。', topic: ''
+      level: '一级', note: '实验室尺度管道，与第 15 篇管网仿真不是同一数据基础；DOI 公开暂未披露。', topic: ''
     },
     {
       id: 17, title: 'Leak detection in water supply pipeline with small-size leakage',
-      authors: 'Guo 等 7 人', date: 'November 2024', venue: '期刊名公开暂未披露',
-      url: 'https://sciencedirect.com/science/article/pii/S095758202401276X',
+      authors: 'Guo 等 7 人', date: 'November 2024',
+      venue: 'Process Safety and Environmental Protection, Vol.191 Pt.B, pp.2712–2724', url: 'https://sciencedirect.com/science/article/pii/S095758202401276X',
       claim: 'SqueezeNet-GRU 在 962 组数据上总体准确率 97.40%，泄漏流量占比 1.60–1.90%。',
-      level: '一级', note: '该文未使用 Transformer。', topic: ''
+      level: '一级', note: '该文未使用 Transformer；DOI 公开暂未披露。', topic: ''
     }
   ];
 

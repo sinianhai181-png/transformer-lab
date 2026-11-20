@@ -1,6 +1,7 @@
 # Transformer 相关论文一手素材（结构化事实）
 
 采集日期：2026-11-19
+复核日期：2026-11-20（本轮复核消除三项待核验、新增一项来源冲突，详见各条与文末"信息可信度说明"）
 适用范围：transformer-lab 项目论文依据补充；同时覆盖供水/管道漏水异常检测方向的期刊一手研究。
 
 ---
@@ -48,9 +49,9 @@
 
 - 作者：Jiehui Xu, Haixu Wu, Jianmin Wang, Mingsheng Long
 - 首次提交：2021-10-06（v1）；最新版本：2022-06-29（v5）
-- 发表：ICLR 2022（ICLR 官方 virtual poster 页面确认接收，标注为 Poster）
+- 发表：ICLR 2022（ICLR 官方 virtual poster 页面确认接收，页面标注为 "2022 Poster"）
 - 摘要原文关键句："Our key observation is that due to the rarity of anomalies, it is extremely difficult to build nontrivial associations from abnormal points to the whole series, thereby, the anomalies' associations shall mainly concentrate on their adjacent time points."；"A minimax strategy is devised to amplify the normal-abnormal distinguishability of the association discrepancy."；"The Anomaly Transformer achieves state-of-the-art results on six unsupervised time series anomaly detection benchmarks of three applications: service monitoring, space & earth exploration, and water treatment."
-- 会议等级：Spotlight。arXiv 与 ICLR 官方 poster 页面均未标注 Spotlight；论文作者官方 GitHub README 标注为 "ICLR 2022 Spotlight"。该等级属二级信源自述，公开核验路径：OpenReview 页面 https://openreview.net/forum?id=LzQQ89U1qm_ （本轮访问触发浏览器验证，未完成核验）。
+- 会议等级（2026-11-20 复核，两源冲突并列登记）：ICLR 2022 官方 virtual poster 页标注为 "2022 Poster"，页面未出现 Spotlight；论文作者官方 GitHub README 标注为 "ICLR 2022 Spotlight"。二者分属一级（会议官方页）与二级（作者自述）信源，结论不一致，如实并列，不判定谁正确。公开核验路径：https://iclr.cc/virtual/2022/poster/7023 与 https://github.com/thuml/Anomaly-Transformer 。OpenReview 页面 https://openreview.net/forum?id=LzQQ89U1qm_ 本轮复核再次触发浏览器验证，仍未完成核验。
 - 数据集数量差异：摘要写六个基准（six benchmarks）；作者官方 GitHub 提供四个数据集的下载与脚本（SMD、MSL、SMAP、PSM），并注明 SWaT 需按官方教程申请。两处数字分属不同表述口径，并列登记。
 - 评估协议：作者官方 GitHub README 原文："Especially, we use the adjustment operation proposed by Xu et al, 2018 for model evaluation."，并指向 issue #14 与 arXiv:1802.03903。
 - [来源：arXiv 官方摘要页 | 发布时间：2021-10-06 (v1) / 2022-06-29 (v5) | 链接：https://arxiv.org/abs/2110.02642]
@@ -63,7 +64,7 @@
 - 首次提交：2021-09-11（v1）；最新版本：2022-01-04（v2）
 - 发表：AAAI 2022, Proceedings of the AAAI Conference on Artificial Intelligence, Vol. 36, Issue 7, pp. 7194–7201
 - 摘要原文关键句："we theoretically and experimentally reveal that the PA protocol has a great possibility of overestimating the detection performance; that is, even a random anomaly score can easily turn into a state-of-the-art TAD method."；"an untrained model obtains comparable detection performance to the existing methods even when PA is forbidden."
-- 提出的新协议：PA%K（要求异常片段中达到给定比例的检测点才触发 adjustment）。该名称来自第三方论文解读页面，非 arXiv 摘要原文；原文摘要仅写 "we propose a new baseline and an evaluation protocol"。PA%K 具体定义未在本次采集中核对原文，标注待核验；公开核验路径：arXiv 全文 https://arxiv.org/pdf/2109.05257 第 4 节。
+- 提出的新协议：PA%K（要求异常片段中达到给定比例的检测点才触发 adjustment）。名称与定义已于 2026-11-20 从 arXiv 全文 HTML 版 Section 4.2 "New evaluation protocol PA%K" 核实，不再是待核验项。原文定义（Section 4.2）：仅当异常段 S_m 中被正确检测出（分数高于阈值 δ）的时间点数量占该段长度的比例超过阈值 K 时，才对该段执行 point adjustment；K 可依先验知识在 0–100 间人工选择。端点含义（Section 5.5）：K=0 等价于原始 F1_PA，K=100 等价于未使用 PA 的普通 F1；论文建议若要去掉对 K 的依赖，可取 K 从 0 到 100 递增所得 F1_PA%K 的曲线下面积。原文并强调该协议 "not proposed to replace existing TAD metrics, but rather to be used along with them"。公开核验路径：https://arxiv.org/html/2109.05257 第 4.2 节与第 5.5 节。
 - 交叉核验：该文结论与 Anomaly Transformer 官方仓库声明的 evaluation adjustment 使用形成公开张力，两方表述并列登记，未做取舍。
 - [来源：arXiv 官方摘要页 | 发布时间：2021-09-11 (v1) / 2022-01-04 (v2) | 链接：https://arxiv.org/abs/2109.05257]
 - [来源：AAAI 2022 官方 poster 页 | 发布时间：2022 | 链接：https://aaai-2022.virtualchair.net/poster_aaai2239]
@@ -182,7 +183,7 @@
 
 - 作者：Ranganathan S, Vinothkumar N, Muthuramalingam E
 - 发布时间：May 2026（ScienceDirect 页面标注）
-- 期刊名称/卷/DOI：公开暂未披露（该页面仅给出日期与文章号 PII S2214714426006720）；公开核验路径：ScienceDirect 文章页 https://sciencedirect.com/science/article/pii/S2214714426006720 的 "Article info" 栏目。
+- 期刊/卷/文章号（2026-11-20 复核，ScienceDirect "Article info" 公开可见）：Journal of Water Process Engineering，Volume 87，Article 110114。DOI：公开暂未披露（页面未显示）；公开核验路径：文章页 "Article info" 栏目。
 - 摘要原文关键句："Using the Net3 hydraulic model, a large-scale dataset was generated with over 47,000 samples"；"binary leak detection is a largely solved problem, with all models achieving over 95% accuracy. Localization, however, remains challenging—ensemble ML methods (Random Forest, XGBoost, LightGBM) achieved Top 1 accuracies around 75–77%, while Transformers and LSTM models showed competitive results."；"A comprehensive robustness analysis across leak size, sensor coverage, and noise revealed ensemble ML to be the most stable."
 - 数据口径：47,000+ 为 Net3 水力模型仿真样本数，非现场实测样本；>95% 为二分类准确率；75–77% 为定位 Top-1 准确率。三项口径不同，不可互相比较。
 - [来源：ScienceDirect 期刊官方页 | 发布时间：May 2026 | 链接：https://sciencedirect.com/science/article/pii/S2214714426006720]
@@ -190,8 +191,8 @@
 **16. Dynamic Causal Graph Network for Reliable Pipeline Leak Detection**
 
 - 作者：Yuxuan Zhang, Yuchen Lu, Dun Li, Sebastian Bader
-- 发布时间：公开暂未披露（页面未给出具体日期；PII 编号 S095183202600606X 含 2026）；公开核验路径：ScienceDirect 文章页 "Article info" 栏目。
-- 期刊名称/卷/DOI：公开暂未披露（同上核验路径）。
+- 发布时间：November 2026（2026-11-20 复核，ScienceDirect "Article info" 公开可见；此前页面未给出具体日期）
+- 期刊/卷/文章号（2026-11-20 复核，ScienceDirect "Article info" 公开可见）：Reliability Engineering & System Safety，Volume 275, Part 2，Article 112795。DOI：公开暂未披露（页面未显示）；公开核验路径：文章页 "Article info" 栏目。
 - 摘要原文关键句："A Transformer-based Causal Inference and Reasoning (CIR) module aggregates long-range causal evidence for robust state inference."；"DCGN achieves 96.32% and 96.60% accuracy respectively"；"Under extreme conditions including 5-dB signal-to-noise ratio (SNR) and strong impulse noise, DCGN maintains over 86% accuracy, and achieves above 81% accuracy with only 10% training samples".
 - 数据口径：96.32% 对应枝状（branched）拓扑，96.60% 对应环状（looped）拓扑；>86% 为 5 dB SNR 与强脉冲噪声条件下；>81% 为仅用 10% 训练样本条件下。该文实验对象为实验室尺度管道（作者页另述四传感器、51.2 kHz 采样、30 s 记录），与篇 15 的管网仿真不是同一数据基础，准确率不可直接比较。
 - [来源：ScienceDirect 期刊官方页 | 发布时间：公开暂未披露 | 链接：https://sciencedirect.com/science/article/pii/S095183202600606X]
@@ -200,7 +201,7 @@
 
 - 作者：Pengcheng Guo, Shumin Zheng, Jianguo Yan, Yan Xu, Jiang Li, Jinyang Ma, Shuaihui Sun
 - 发布时间：November 2024（ScienceDirect 页面标注）
-- 期刊名称/卷/DOI：公开暂未披露（页面仅给出日期与文章号 PII S095758202401276X）；公开核验路径：ScienceDirect 文章页 "Article info" 栏目。
+- 期刊/卷/页码（2026-11-20 复核，ScienceDirect "Article info" 公开可见）：Process Safety and Environmental Protection，Volume 191, Part B，pp. 2712–2724。DOI：公开暂未披露（页面未显示）；公开核验路径：文章页 "Article info" 栏目。
 - 摘要原文关键句："inner pipe diameter of 100 mm in the operating range of volume flow Q = 40–80 m3/h, leakage flow Ql = 0.65–1.33 m3/h and pressure p = 130–220 kPa"；"SqueezeNet-GRU demonstrates superior performance in pipeline leak detection and localization applications, achieving 97.40% accuracy for the total dataset."
 - 讨论章节原文关键句："especially when the leakage flow is less than 5% of the total volume flow"；"leakage flow accounting for only 1.60–1.90% of the total volume flow"。
 - 数据口径：97.40% 为 962 组数据上的总体准确率；1.60–1.90% 为泄漏流量占总流量比例；0.65–1.33 m3/h 为泄漏流量绝对值；该文使用 CNN/LSTM/GRU/SqueezeNet，未使用 Transformer。
@@ -249,7 +250,8 @@ FlashAttention 数字逐项口径：
 
 - **一级信源（核心采信）**：arXiv 官方摘要页（14 篇，标题/作者/日期/摘要原文逐条读取）；NeurIPS 官方 proceedings（篇 1 会议版摘要）；ICLR 2022 官方 virtual poster（篇 2 接收事实与摘要）；AAAI 2022 官方 poster 页（篇 3 接收事实与摘要）；ScienceDirect 期刊官方页（篇 15/16/17）。这些页面均给出发布主体与原文，作为事实依据。
 - **二级信源（补充参考）**：论文作者官方 GitHub README（篇 2 的 Spotlight 等级调整操作声明）。已单独标注，未作为数字来源。
-- **待核验条目**：篇 2 的 Spotlight 等级（OpenReview 页面触发浏览器验证，未完成核验，公开路径已给）；篇 3 的 PA%K 具体定义（未核对原文，公开路径已给）；篇 9/10/12 的会议信息（arXiv 页面未标注，公开路径已给）；篇 15/16/17 的期刊名、卷、DOI（ScienceDirect 页面 "Article info" 栏目，需登录或机构权限完整查看，本轮未突破）。
+- **待核验条目（2026-11-20 复核后更新）**：篇 2 的会议等级为两源冲突并列登记（ICLR 官方 poster 页为 "2022 Poster"，作者仓库自述 "Spotlight"；OpenReview 触发浏览器验证未完成核验，路径已给）；篇 9/10/12 的会议信息经复核 arXiv 页面确无 Comments 字段标注（RoFormer 为 "fixed some typos"、ALiBi 与 GLU Variants 无 Comments），维持"公开暂未披露"并附核验路径；篇 15/16/17 的 DOI 页面仍未显示，维持"公开暂未披露"（卷/文章号已于本轮补齐）。本轮新消除的待核验项：篇 3 的 PA%K 定义（已核实原文 Section 4.2）。
+- **2026-11-20 复核新增一手来源**：ICLR 2022 官方 virtual poster 页（篇 2，标注 2022 Poster）；arXiv 全文 HTML 版（篇 3，PA%K 定义）；ScienceDirect "Article info" 栏目（篇 15/16/17 的期刊名、卷、文章号/页码）。均无需机构权限即可读取上述字段。
 - **冲突并列登记（不强行统一）**：篇 1 的 arXiv v7 与 NeurIPS 2017 两版摘要 BLEU 数字；篇 2 摘要的六个基准与官方仓库四个脚本；篇 2 使用 adjustment 评估与篇 3 对 point adjustment 的批评；篇 7 与篇 8 对注意力解释性的相反结论。
 - **风险/反例维度**：篇 3 指出评测协议可使随机分数达到 SOTA；篇 7 指出注意力权重不构成解释；篇 15 指出漏水二分类已"largely solved"、定位仍是难点且集成 ML 鲁棒性最稳；篇 16 指出统计相关会引入伪连接，需因果约束。以上均为原文表述，非本采集的推论。
 - **未采信内容**：此前五份附件中保留"浮点搜索2.0""已阅读 10 篇网页""DeepSeek-R1满血版"等网页残留的 PDF，以及无发布主体的转载文章，均未按论文来源采信。

@@ -249,6 +249,8 @@ select { cursor: pointer; }
 .adv-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 6px; }
 .adv-table th, .adv-table td { border: 1px solid var(--line-soft); padding: 4px 6px; text-align: center; }
 .adv-table th { background: #f8fafc; color: var(--ink-2); }
+.adv-code { font-family: var(--mono); font-size: 10.5px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; margin: 0; color: var(--ink); }
+.adv-warn .adv-code, .adv-note .adv-code { color: inherit; }
 .adv-flow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 11px; }
 .adv-flow span { background: #f1f5f9; border: 1px solid var(--line); border-radius: 6px; padding: 4px 7px; }
 .adv-flow b { color: var(--primary); }

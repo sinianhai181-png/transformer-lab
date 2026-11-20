@@ -1,6 +1,6 @@
 # 进阶实验室说明
 
-进阶实验室是主界面的第九块内容，用九个主题回答一个问题：**2017 年的论文结构，怎样走到今天的模型、推理系统和可解释性讨论？**
+进阶实验室是主界面的第九块内容，用十一个主题回答一个问题：**2017 年的论文结构，怎样走到今天的模型、推理系统和可解释性讨论？**
 
 所有主题都基于当前页面配置或明确标注的 toy 示例，不连接外部模型，不做训练。界面中保留了三级来源标注：
 
@@ -8,7 +8,7 @@
 - **[实现]** — 主流实现中的做法，可能与论文原文不同。
 - **[解读]** — 学界或社区常见解释，不是论文证明的结论。
 
-## 九个主题一览
+## 十一个主题一览
 
 | 主题 | 能看到什么 | 主要来源 |
 | --- | --- | --- |
@@ -21,6 +21,8 @@
 | QK/OV 电路 | 当前第 1 个头的 QK 与 OV 有效矩阵热力图 | Elhage et al. 2021 |
 | 归纳头 | `[A][B] … [A] → [B]` 的两层组合过程；证据强度分级 | Olsson et al. 2022 |
 | Logit Lens | 每层隐藏状态投影回词表后的 top-1 预测与下一真实词概率 | nostalgebraist 2020（社区方法） |
+| 批注四问 | 分词 / 编码 / 重要性 / 解码器四问，按[论文/事实]/[解读]/[边界]分层，可跳对应实验 | PatchTST、Anomaly Transformer、Jain & Wallace、BERT |
+| 实现错误对照 | 五例实测错误（编译失败、掩码反向、padding 维、NaN、恒等映射）的错误→实测→正确对照 | 附件代码实测审读，`docs/REVIEW-materials.md` |
 
 ## 1. 架构族对照
 
@@ -116,6 +118,29 @@ Logit Lens 是社区方法（nostalgebraist 2020），把每层隐藏状态直�
 
 [解读] 这能看出预测如何逐层收敛，但不等于模型真的在那一层做了决定。Pre-Norm 栈末还有一次额外 LayerNorm，因此最后一层快照与最终输出 logits 可能不同。
 
+## 10. 批注四问
+
+来自五份材料页边的四条手写批注，是整套材料真正的主线。界面把每问的答复按三级来源拆开，避免把推论当论文结论：
+
+- **为什么分词**：文本是符号索引化；时序的对应物是"把窗口切成多少位置"，即 patch 切分。粒度决定注意力分辨率与 O(n²) 计算量。
+- **怎么编码才富含信息**：可学习 embedding + 位置/时间特征 + 多层上下文三者叠加，不是给每一维贴语义标签。
+- **注意力≠重要性**：softmax 行和为 1，只表示读取预算分配。重要性更可靠的量是消融、梯度×输入、OV 写回量；对角元最不可靠。异常检测推荐用关联差异。
+- **要不要解码器**：判别/打分用 encoder-only 就够；只有重建式需要重构头，自回归解码器不需要。
+
+每问都附一手来源链接与可跳转的对应实验（复杂度、位置编码、关联差异、架构族）。本主题属 `[解读] + [论文]` 组合，非新事实。
+
+## 11. 实现错误对照
+
+五例均来自对所附 `transformer代码.docx` 的实测审读，不是虚构案例：
+
+1. **docstring 缺引号** — `py_compile` 实测第 1 段第 35 行 `SyntaxError: invalid character '。'`，该段无法运行；第 2 段 452 行编译通过。
+2. **因果掩码整体反向** — `triu(·, diagonal=1)` 与 `mask==0 → −inf` 组合后，位置 t 反而屏蔽了 ≤ t 的位置，对角线自己也看不到。正确应为 `~triu(·, diagonal=1)`。
+3. **padding 掩码落在 query 维** — `(tgt!=0).unsqueeze(1).unsqueeze(3)` 得 `(B,1,L,1)`，标记的是 query；应为 `.unsqueeze(2)` 得到 `(B,1,1,L)` 按 key 屏蔽。
+4. **全 −inf 行 + softmax = NaN** — numpy 实测 `-inf - (-inf)` 得到 nan；标准做法用 `-1e9`，并去掉多余的 `[:, None, :, :]`。
+5. **训练任务是恒等映射** — 70% 样本 `tgt_output = tgt_input.clone()` 且 src 独立随机，模型学成恒等映射即可压低 loss，交叉注意力白训；应让 tgt 由 src 决定并做右移 teacher forcing。
+
+每例按"错误写法 → 实测/后果 → 正确写法 → 根因"四段呈现。本主题的实测记录见仓库外 `docs/REVIEW-materials.md`（附件审读报告），本实验台引擎已修正对应问题。
+
 ## 已知边界
 
 - 主引擎始终按 2017 论文结构运行；进阶主题里的 RMSNorm、SwiGLU、RoPE、GQA、KV Cache 是独立演示，不改变前向结果。
@@ -137,3 +162,6 @@ Logit Lens 是社区方法（nostalgebraist 2020），把每层隐藏状态直�
 11. Elhage et al. 2021. *A Mathematical Framework for Transformer Circuits*. https://transformer-circuits.pub/2021/framework/index.html
 12. Olsson et al. 2022. *In-context Learning and Induction Heads*. https://arxiv.org/abs/2209.11895
 13. nostalgebraist 2020. *Interpreting GPT: the Logit Lens*. https://www.lesswrong.com/posts/AcKRB8wDpdaN6v6ru/interpreting-gpt-the-logit-lens
+14. Nie et al. 2023. *A Time Series is Worth 64 Words*（PatchTST）. https://arxiv.org/abs/2211.14730
+15. Xu et al. 2022. *Anomaly Transformer*（关联差异）. https://arxiv.org/abs/2110.02642
+16. Devlin et al. 2018. *BERT*. https://arxiv.org/abs/1810.04805

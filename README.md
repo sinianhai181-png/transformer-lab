@@ -25,7 +25,7 @@ npm install
 npm test
 ```
 
-当前测试：**111 项全部通过**，覆盖矩阵运算、位置编码、掩码、形状不变量、可编辑权重、序列化，以及界面初始化、参数联动、播放器、权重编辑、七个对照实验、九个进阶主题、论文清单跳转与结构图导出。
+当前测试：**124 项全部通过**，覆盖矩阵运算、位置编码、掩码、形状不变量、可编辑权重、序列化，以及界面初始化、参数联动、播放器、权重编辑、七个对照实验、十一个进阶主题（含批注四问与实现错误对照）、论文清单跳转与结构图导出。
 
 ## 界面预览
 
@@ -73,7 +73,7 @@ npm test
 - **张量数值**：每步显示完整矩阵、张量形状、公式、来源标注（`[论文]` / `[实现]` / `[解读]`）和一句解释。
 - **注意力热力图**：行是 Query 位置、列是 Key 位置，悬停查看具体权重；分数矩阵用发散色，注意力权重用单色深浅。
 - **七个对照实验**：位置编码消融、因果掩码对比、多头分工、缩放与温度、注意力复杂度 `O(n²)`、Point-Adjust 评测陷阱、关联差异异常检测。后两个依据一手论文，明确标注为机制示意、不构成检测准确率证据。
-- **进阶实验室**：九个可交互主题——架构族对照、Modern Block、注意力≠解释、FlashAttention、KV Cache、RoPE/ALiBi、QK/OV 电路、归纳头、Logit Lens。每个主题都标出论文、实现或解读等级，详见 [docs/ADVANCED.md](docs/ADVANCED.md)。
+- **进阶实验室**：十一个可交互主题——架构族对照、Modern Block、注意力≠解释、FlashAttention、KV Cache、RoPE/ALiBi、QK/OV 电路、归纳头、Logit Lens，以及新增的「批注四问」（分词/编码/重要性/解码器，按[论文/事实]/[解读]/[边界]分层）与「实现错误对照」（五例实测错误，按错误写法→实测→正确写法对照）。每个主题都标出论文、实现或解读等级，详见 [docs/ADVANCED.md](docs/ADVANCED.md)。
 - **论文清单**：前台 17 篇一手论文，按主题分组，含标题 / 作者 / 时间 / 发表处 / 一句话结论 / 证据等级 / 待核验标注，可一键跳到对应实验或主题；完整素材与口径说明见 [docs/PAPERS.md](docs/PAPERS.md)。
 
 ## 严谨性：资料等级与标注
@@ -100,7 +100,7 @@ npm test
 - [docs/WRITING-MEMO.md](docs/WRITING-MEMO.md)：写作建议与分析推论（**非事实素材，不可作为数据引用**）。
 - [docs/RESEARCH-NOTES.md](docs/RESEARCH-NOTES.md)：采集口径规则、待核验条目与公开核验路径。
 
-三份文件按"事实 / 观点 / 过程说明"分区，互不混写。事实文档中并列登记了三处来源冲突：原论文 arXiv v7 与 NeurIPS 2017 摘要的 BLEU 数字差异、Anomaly Transformer 摘要基准数与官方仓库脚本数差异、point-adjust 评测协议争议。
+三份文件按"事实 / 观点 / 过程说明"分区，互不混写。事实文档中并列登记了四处来源冲突：原论文 arXiv v7 与 NeurIPS 2017 摘要的 BLEU 数字差异、Anomaly Transformer 摘要基准数与官方仓库脚本数差异、Anomaly Transformer 会议等级（ICLR 官方 poster 页标 2022 Poster / 作者仓库自述 Spotlight）、point-adjust 评测协议争议。篇 3 的 PA%K 定义已核实原文 Section 4.2，三篇期刊卷期已由 ScienceDirect "Article info" 补齐；复核日期 2026-11-20。
 
 ## 目录结构
 
@@ -112,7 +112,7 @@ transformer-lab/
 ├── js/visualizer.js        # 全景 SVG、矩阵表、热力图、折线图
 ├── js/app.js               # 控件联动、播放器、权重编辑、导入导出
 ├── js/lab.js               # 七个对照实验
-├── js/advanced.js          # 九个进阶主题
+├── js/advanced.js          # 十一个进阶主题（含批注四问、实现错误对照）
 ├── js/papers.js            # 论文清单前台数据与渲染
 ├── tests/
 │   ├── engine.test.js      # 数值与不变量

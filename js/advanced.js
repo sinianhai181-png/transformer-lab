@@ -19,12 +19,14 @@
     { id: 'position', label: 'RoPE / ALiBi' },
     { id: 'circuits', label: 'QK/OV 电路' },
     { id: 'induction', label: '归纳头' },
-    { id: 'logitlens', label: 'Logit Lens' }
+    { id: 'logitlens', label: 'Logit Lens' },
+    { id: 'annotations', label: '批注四问' },
+    { id: 'pitfalls', label: '实现错误对照' }
   ];
 
   var state = {
     active: 'architecture', dirty: true,
-    flash: 0, kv: 0, induction: 0,
+    flash: 0, kv: 0, induction: 0, annotation: 0, pitfall: 0,
     ropeM: 2, ropeN: 5, alibiAlpha: 4
   };
 
@@ -365,11 +367,154 @@
       src('nostalgebraist 2020, Interpreting GPT: the Logit Lens', 'https://www.lesswrong.com/posts/AcKRB8wDpdaN6v6ru/interpreting-gpt-the-logit-lens');
   }
 
+  /* ---------------- 主题 10：批注四问 ---------------- */
+  var ANNOTATIONS = [
+    {
+      q: '为什么把句子切成一个个单词（分词）？',
+      layers: [
+        { kind: 'fact', text: '模型只接受数值：离散符号要先映射成词表 ID，再查 embedding 表变成向量。粒度是代价权衡——越细词表越小、未登录词越少，但序列变长，注意力 O(n²) 代价按平方涨；越粗序列短但词表膨胀、遇新词失效。BPE / WordPiece 是折中。' },
+        { kind: 'fact', text: '时序没有天然词表，对应物是“把窗口切成多少个位置”：每步一个 token（n = 窗口长度，代价最高），或每 k 步打成一个 patch（n = 窗口/k，注意力代价约降到 1/k²）。' },
+        { kind: 'read', text: '所以在时序里“分词”实质是在选注意力的分辨率和计算量，这个选择往往比模型结构更影响结果。' }
+      ],
+      links: [
+        { label: 'PatchTST（patch 切分，ICLR 2023）', url: 'https://arxiv.org/abs/2211.14730' },
+        { label: '源论文 Attention Is All You Need（BPE）', url: 'https://arxiv.org/abs/1706.03762' }
+      ],
+      jump: { module: 'lab', id: 'complexity', label: '看复杂度实验' }
+    },
+    {
+      q: '怎么编码才能让词语富含信息？',
+      layers: [
+        { kind: 'fact', text: '不是给每一维贴语义标签。信息来自三件事叠加：可学习 embedding（值由训练任务决定）、位置编码（打乱词序结果会变）、多层注意力引入的上下文（同一个词在不同句子得到不同向量）。' },
+        { kind: 'read', text: '对漏水检测，可落地的输入表示是三块相加：标准化数值投影 + 时间特征（小时/星期/节假日）+ 通道标识。缺时间特征学不到“深夜应接近 0”的周期性，缺通道标识分不清是哪个传感器。' },
+        { kind: 'warn', text: '本实验台的 embedding 是固定随机查表，只为展示张量形状与数值流，不能拿来论证“语义编码效果”。' }
+      ],
+      links: [
+        { label: 'RoFormer（位置编码，2021）', url: 'https://arxiv.org/abs/2104.09864' },
+        { label: '源论文 Attention Is All You Need', url: 'https://arxiv.org/abs/1706.03762' }
+      ],
+      jump: { module: 'lab', id: 'pe', label: '看位置编码实验' }
+    },
+    {
+      q: '注意力是成对相关性，不是重要性——怎么体现重要性？',
+      layers: [
+        { kind: 'fact', text: 'softmax 按行归一化、每行和为 1，注意力表达的是“这个位置把读取预算分给了谁”，不是“谁重要”。因此只看注意力矩阵的行看不出重要性。' },
+        { kind: 'fact', text: '衡量重要性的量按可靠性排序：消融（置零看输出变化，最接近因果）、梯度×输入 / Integrated Gradients、OV 写回量、列和（总量恒为 n，只能相对比较）、对角元（受 attention sink 污染，最不可靠）。' },
+        { kind: 'read', text: '对异常检测，推荐 Anomaly Transformer 的关联差异而非对角元：用高斯先验关联对实际注意力关联做对称 KL，正常点两种关联接近，异常点明显偏离。本实验台“关联差异”实验即此机制的构造式示意。' },
+        { kind: 'warn', text: 'Jain & Wallace (2019) 与 Wiegreffe & Pinter (2019) 立场相反但都一手可查；报告若用注意力做解释，须配消融实验，不要单边站队。' }
+      ],
+      links: [
+        { label: 'Anomaly Transformer（ICLR 2022）', url: 'https://arxiv.org/abs/2110.02642' },
+        { label: 'Attention is not Explanation（NAACL 2019）', url: 'https://arxiv.org/abs/1902.10186' },
+        { label: 'Attention is not not Explanation（EMNLP 2019）', url: 'https://arxiv.org/abs/1908.04626' }
+      ],
+      jump: { module: 'lab', id: 'assoc', label: '看关联差异实验' }
+    },
+    {
+      q: '漏水检测只要判断异常，是否不需要解码器？',
+      layers: [
+        { kind: 'fact', text: '要把两个“解码器”分开：自回归解码器（GPT 式，逐 token 生成 + 因果掩码）输出下一个词概率；重构头把表示还原成原序列以算重构误差。后者不是语言模型解码器。' },
+        { kind: 'fact', text: '判别/打分任务用 encoder-only 就够：预测式 = encoder + 回归头；表示学习式 = encoder + 池化 + 距离；注意力式 = 直接读注意力；只有重建式需要重构头（几层 MLP，无因果掩码、无 teacher forcing）。' },
+        { kind: 'read', text: '所以批注判断成立：不需要自回归解码器。重建式要留意容量过大时会学成恒等映射、把异常也原样重建，实践中加瓶颈、加噪或掩码重建来防捷径。' }
+      ],
+      links: [
+        { label: 'BERT（encoder-only 代表，2018）', url: 'https://arxiv.org/abs/1810.04805' },
+        { label: 'Anomaly Transformer（重建 + 关联，2022）', url: 'https://arxiv.org/abs/2110.02642' }
+      ],
+      jump: { module: 'adv', id: 'architecture', label: '看架构族对照' }
+    }
+  ];
+  function renderAnnotations() {
+    var i = Math.min(Math.max(state.annotation || 0, 0), ANNOTATIONS.length - 1);
+    var a = ANNOTATIONS[i];
+    var stepper = '<div class="adv-stepper">' +
+      '<button type="button" class="btn btn-mini" id="advAnnPrev"' + (i === 0 ? ' disabled' : '') + '>上一问</button>' +
+      '<span class="lab-metric">第 ' + (i + 1) + ' / ' + ANNOTATIONS.length + ' 问</span>' +
+      '<button type="button" class="btn btn-mini" id="advAnnNext"' + (i === ANNOTATIONS.length - 1 ? ' disabled' : '') + '>下一问</button></div>';
+    var chips = ANNOTATIONS.map(function (x, k) {
+      return '<button type="button" class="adv-tab' + (k === i ? ' active' : '') + '" data-ann="' + k + '">' + esc('问' + (k + 1)) + '</button>';
+    }).join('');
+    var cls = { fact: 'adv-note', read: 'adv-note', warn: 'adv-warn' };
+    var tag = { fact: '[论文/事实]', read: '[解读]', warn: '[边界]' };
+    var body = '<h3 style="font-size:14px;margin:6px 0 10px">' + esc(a.q) + '</h3>';
+    a.layers.forEach(function (L) {
+      body += '<div class="' + cls[L.kind] + '" style="margin-top:8px"><b>' + tag[L.kind] + '</b> ' + esc(L.text) + '</div>';
+    });
+    body += '<div class="adv-intro" style="margin-top:10px"><b>一手来源</b></div>';
+    a.links.forEach(function (s) { body += src(s.label, s.url); });
+    body += '<div style="margin-top:10px"><button type="button" class="btn btn-mini" data-jump-module="' + a.jump.module +
+      '" data-jump-id="' + a.jump.id + '">' + esc(a.jump.label) + ' →</button></div>';
+    return '<p class="adv-intro">这四问来自材料页边手写批注，是五份材料真正的主线。逐问给出答复，并按 [论文/事实] / [解读] / [边界] 分层，附一手来源与可跳转的对应实验。</p>' +
+      chips + stepper + '<div class="adv-panel" style="margin-top:8px">' + body + '</div>';
+  }
+
+  /* ---------------- 主题 11：实现错误对照 ---------------- */
+  var PITFALLS = [
+    {
+      name: 'docstring 缺引号，代码编译失败',
+      wrong: 'def forward(self, Q, K, V, mask=None):\n    缩放点积注意力的前向传播。   # 缺 """\n        Q (torch.Tensor): ...',
+      measured: 'py_compile 实测：第 1 段 441 行，第 35 行 SyntaxError: invalid character \u0027。\u0027 (U+3002)；第 2 段 452 行编译通过。',
+      right: 'def forward(self, Q, K, V, mask=None):\n    """缩放点积注意力的前向传播。\n    Q (torch.Tensor): ...\n    """',
+      why: '“注释更全”的那一版反而跑不起来；能跑的是删掉注释的版本。'
+    },
+    {
+      name: '因果掩码方向反了',
+      wrong: 'nopeak = torch.triu(torch.ones((1,L,L)), diagonal=1).bool()\ntgt_mask = padding & nopeak\n# masked_fill(mask == 0, -inf) → 上三角被屏蔽',
+      measured: 'L=4 时 mask==0（被填 -inf）的矩阵：\n1 0 0 0\n1 1 0 0\n1 1 1 0\n1 1 1 1\n第 0 行只看未来（key 1,2,3），第 3 行整行 -inf，对角线自己也看不到。',
+      right: 'nopeak = ~torch.triu(torch.ones((1,L,L)), diagonal=1).bool()\n# 允许矩阵：下三角 + 对角线 = 1\n1 0 0 0\n1 1 0 0\n1 1 1 0\n1 1 1 1',
+      why: '把“允许”与“屏蔽”语义整体取反；因果掩码要求位置 t 只看 ≤ t。'
+    },
+    {
+      name: 'padding 掩码作用在 query 维而非 key 维',
+      wrong: '(tgt != 0).unsqueeze(1).unsqueeze(3)   # (B,1,L,1)\n# 末维为 1，沿 key 广播 → 标记的是 query 是否 padding',
+      measured: '第二句后两位是 padding 时，tgt_mask 出现整行 0：\n0 1 1 1\n0 0 1 1\n0 0 0 0  ← padding 行整行 -inf\n0 0 0 0\npadding 作 query 被整行屏蔽，作 key 却完全没被屏蔽。',
+      right: '(tgt != 0).unsqueeze(1).unsqueeze(2)   # (B,1,1,L)\n# 末维为 L，按 key 位置屏蔽',
+      why: 'padding 掩码要屏蔽“作为 key 被读取的 padding 位置”，维度必须落在 key 轴。'
+    },
+    {
+      name: '全 -inf 行 + 自定义 softmax = NaN',
+      wrong: 'attn = attn.masked_fill(mask[:, None, :, :] == 0, float("-inf"))\n# 上一错误产生全 -inf 行；x_max 也是 -inf',
+      measured: 'numpy 实测：x = [-inf,-inf,inf,-inf]，x−x.max() 得到\n[-inf -inf nan -inf]，sum = nan，softmax 输出全 nan。\n一旦出现 NaN，反向传播使整个模型梯度变 NaN。',
+      right: 'attn = attn.masked_fill(mask == 0, -1e9)\n# 用大负数代替 -inf，避免 -inf - (-inf)\n# 同时去掉多余的 [:, None, :]（mask 已是 4 维）',
+      why: '标准实现用 -1e9 而非 -inf，正是为了避开全屏蔽行的 NaN。'
+    },
+    {
+      name: '训练任务是恒等映射，loss 好看但没学到东西',
+      wrong: 'src  = torch.randint(...)            # 与 tgt 独立随机\ntgt_input  = torch.randint(...)\ntgt_output = tgt_input.clone()       # 70% 完全相同\nif torch.rand(1) > 0.7: ...          # 仅 30% 加噪',
+      measured: '实测语义：70% 样本输入=标签，模型学成恒等映射即可压低 loss；src 与 tgt 独立随机，编码器对目标无信息量，交叉注意力权重等于白训；loss 曲线好看但不验证任何 Transformer 结论。',
+      right: '让 tgt 由 src 决定（复制 / 排序 / 翻译对等），并按 teacher forcing\n把 tgt_input 右移一位：[SOS] + tgt_output[:-1]，标签 tgt_output。\nEOS 与 padding 用不同 ID，贪婪解码才能正确停止。',
+      why: '这是整份代码最本质的问题：任务设定不成立，其余 bug 都掩盖在“loss 会降”之下。'
+    }
+  ];
+  function renderPitfalls() {
+    var i = Math.min(Math.max(state.pitfall || 0, 0), PITFALLS.length - 1);
+    var p = PITFALLS[i];
+    var stepper = '<div class="adv-stepper">' +
+      '<button type="button" class="btn btn-mini" id="advPitPrev"' + (i === 0 ? ' disabled' : '') + '>上一例</button>' +
+      '<span class="lab-metric">第 ' + (i + 1) + ' / ' + PITFALLS.length + ' 例</span>' +
+      '<button type="button" class="btn btn-mini" id="advPitNext"' + (i === PITFALLS.length - 1 ? ' disabled' : '') + '>下一例</button></div>';
+    var chips = PITFALLS.map(function (_, k) {
+      return '<button type="button" class="adv-tab' + (k === i ? ' active' : '') + '" data-pit="' + k + '">' + esc('例' + (k + 1)) + '</button>';
+    }).join('');
+    var pre = function (s) { return '<pre class="adv-code">' + esc(s) + '</pre>'; };
+    var body = '<h3 style="font-size:14px;margin:6px 0 10px">' + esc(p.name) + '</h3>' +
+      '<div class="adv-grid">' +
+      panel('① 错误写法', pre(p.wrong)) +
+      panel('② 实测 / 后果', '<div class="adv-warn" style="margin-top:0">' + pre(p.measured) + '</div>') +
+      panel('③ 正确写法', pre(p.right)) +
+      '</div>' +
+      '<div class="adv-note"><b>为什么：</b>' + esc(p.why) + '</div>';
+    return '<p class="adv-intro">五例均来自对附件的实测审读（编译、numpy 复现、语义推演），非虚构。每例按“错误写法 → 实测后果 → 正确写法”对照，最后说明根因。</p>' +
+      chips + stepper + body +
+      '<div class="adv-note">[边界] 这些错误出自所审读的附件代码，不是本实验台引擎。本实验台引擎已修正对应问题，并用数值梯度检验与“不得出现 NaN”测试守住。</div>';
+  }
+
   /* ---------------- 渲染与事件 ---------------- */
   var RENDERERS = {
     architecture: renderArchitecture, modern: renderModern, explanation: renderExplanation,
     flash: renderFlash, kv: renderKV, position: renderPosition,
-    circuits: renderCircuits, induction: renderInduction, logitlens: renderLogitLens
+    circuits: renderCircuits, induction: renderInduction, logitlens: renderLogitLens,
+    annotations: renderAnnotations, pitfalls: renderPitfalls
   };
   function tabs() {
     $('advTabs').innerHTML = TOPICS.map(function (t) {
@@ -414,6 +559,25 @@
     if (m) m.addEventListener('change', function () { state.ropeM = Number(m.value); run(); });
     if (n) n.addEventListener('change', function () { state.ropeN = Number(n.value); run(); });
     if (a) a.addEventListener('change', function () { state.alibiAlpha = Number(a.value); run(); });
+    var annPrev = $('advAnnPrev'), annNext = $('advAnnNext');
+    if (annPrev) annPrev.addEventListener('click', function () { state.annotation = Math.max(0, (state.annotation || 0) - 1); run(); });
+    if (annNext) annNext.addEventListener('click', function () { state.annotation = Math.min(ANNOTATIONS.length - 1, (state.annotation || 0) + 1); run(); });
+    Array.prototype.forEach.call($('advBody').querySelectorAll('[data-ann]'), function (b) {
+      b.addEventListener('click', function () { state.annotation = Number(b.dataset.ann); run(); });
+    });
+    var pitPrev = $('advPitPrev'), pitNext = $('advPitNext');
+    if (pitPrev) pitPrev.addEventListener('click', function () { state.pitfall = Math.max(0, (state.pitfall || 0) - 1); run(); });
+    if (pitNext) pitNext.addEventListener('click', function () { state.pitfall = Math.min(PITFALLS.length - 1, (state.pitfall || 0) + 1); run(); });
+    Array.prototype.forEach.call($('advBody').querySelectorAll('[data-pit]'), function (b) {
+      b.addEventListener('click', function () { state.pitfall = Number(b.dataset.pit); run(); });
+    });
+    Array.prototype.forEach.call($('advBody').querySelectorAll('[data-jump-module]'), function (b) {
+      b.addEventListener('click', function () {
+        var api = b.dataset.jumpModule === 'lab' ? window.TMLab : window.TMAdv;
+        var fn = b.dataset.jumpModule === 'lab' ? 'selectExperiment' : 'selectTopic';
+        if (api && typeof api[fn] === 'function') api[fn](b.dataset.jumpId);
+      });
+    });
   }
   function boot() {
     tabs();

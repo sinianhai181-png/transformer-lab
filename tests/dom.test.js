@@ -110,6 +110,9 @@ exports.run = function (t) {
   t.eq(doc.querySelectorAll('#paperList .paper-item').length, 17, '17 篇论文全部渲染');
   t.eq(doc.querySelectorAll('#paperList .paper-group').length, 6, '按六个主题分组');
   t.ok(doc.getElementById('paperList').innerHTML.indexOf('公开暂未披露') >= 0, '待核验字段如实标注');
+  t.ok(doc.getElementById('paperList').innerHTML.indexOf('2022 Poster') >= 0, '篇2 会议等级两源冲突已并列登记');
+  t.ok(doc.getElementById('paperList').innerHTML.indexOf('Journal of Water Process Engineering') >= 0, '篇15 期刊卷期已从原文核实并更新');
+  t.ok(doc.getElementById('paperList').innerHTML.indexOf('PA%K 定义已从原文') >= 0, '篇3 PA%K 待核验已消除');
   t.ok(typeof w.TMLab.selectExperiment === 'function' && typeof w.TMAdv.selectTopic === 'function',
     '论文跳转接口已暴露');
   t.ok(w.TMLab.selectExperiment('pointadjust') && w.TMAdv.selectTopic('explanation'), '跳转到对应实验/主题成功');
@@ -117,7 +120,7 @@ exports.run = function (t) {
   t.group('界面 · 进阶实验室');
 
   t.ok(!!w.TMAdv, '进阶模块已加载');
-  t.eq(w.TMAdv.topics.length, 9, '进阶实验室包含九个主题');
+  t.eq(w.TMAdv.topics.length, 11, '进阶实验室包含十一个主题');
   w.TMAdv.topics.forEach(function (id) {
     const b = doc.querySelector('#advTabs .adv-tab[data-id="' + id + '"]');
     fire(w, b, 'click');
@@ -142,6 +145,31 @@ exports.run = function (t) {
   fire(w, circuitTab, 'click');
   const circuitHtml = doc.getElementById('advBody').innerHTML;
   t.ok(circuitHtml.indexOf('NaN') < 0 && circuitHtml.indexOf('OV 有效矩阵') >= 0, 'QK/OV 有效矩阵均为有效数值');
+
+  t.group('界面 · 批注四问与实现错误对照');
+
+  const annTab = doc.querySelector('#advTabs .adv-tab[data-id="annotations"]');
+  fire(w, annTab, 'click');
+  let annHtml = doc.getElementById('advBody').innerHTML;
+  t.ok(annHtml.indexOf('第 1 / 4 问') >= 0 && annHtml.indexOf('为什么把句子切成一个个单词') >= 0, '批注四问第 1 问正常渲染');
+  t.ok(annHtml.indexOf('[论文/事实]') >= 0 && annHtml.indexOf('[解读]') >= 0 && annHtml.indexOf('[边界]') >= 0, '批注四问按事实/解读/边界分层');
+  fire(w, doc.getElementById('advAnnNext'), 'click');
+  annHtml = doc.getElementById('advBody').innerHTML;
+  t.ok(annHtml.indexOf('第 2 / 4 问') >= 0, '批注四问下一步按钮生效');
+  fire(w, doc.querySelector('#advBody [data-ann="3"]'), 'click');
+  annHtml = doc.getElementById('advBody').innerHTML;
+  t.ok(annHtml.indexOf('不需要自回归解码器') >= 0, '批注四问第 4 问（解码器）可跳转查看');
+
+  const pitTab = doc.querySelector('#advTabs .adv-tab[data-id="pitfalls"]');
+  fire(w, pitTab, 'click');
+  let pitHtml = doc.getElementById('advBody').innerHTML;
+  t.ok(pitHtml.indexOf('第 1 / 5 例') >= 0 && pitHtml.indexOf('错误写法') >= 0, '实现错误对照第 1 例正常渲染');
+  t.ok(pitHtml.indexOf('实测') >= 0 && pitHtml.indexOf('正确写法') >= 0, '实现错误对照含实测与正确写法');
+  fire(w, doc.getElementById('advPitNext'), 'click');
+  fire(w, doc.querySelector('#advBody [data-pit="4"]'), 'click');
+  pitHtml = doc.getElementById('advBody').innerHTML;
+  t.ok(pitHtml.indexOf('第 5 / 5 例') >= 0 && pitHtml.indexOf('恒等映射') >= 0, '实现错误对照可跳到第 5 例（恒等映射）');
+  t.ok(pitHtml.indexOf('主题运行失败') < 0, '两个新主题渲染无异常');
 
   w.TMApp.pause();
   w.close();
