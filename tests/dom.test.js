@@ -31,6 +31,22 @@ exports.run = function (t) {
   t.ok(doc.querySelectorAll('#stepChips .step-chip').length === s0.steps.length, '步骤导航数量与快照一致');
   t.ok(doc.querySelectorAll('#panorama .pano-node').length >= 5, '全景结构图节点已渲染');
 
+  t.group('界面 · 论文原图');
+
+  const fig = doc.getElementById('paperFigureCard');
+  t.ok(!!fig, '论文原图卡片已插入');
+  const fimg = doc.getElementById('paperFigureImg');
+  t.ok(fimg.getAttribute('src').indexOf('web-figure1-attention-is-all-you-need.png') >= 0, '默认显示论文 Figure 1 原图');
+  const ftabs = doc.querySelectorAll('#figureTabs .figure-tab');
+  t.eq(ftabs.length, 3, '三张图切换按钮齐全');
+  fire(w, ftabs[1], 'click');
+  t.ok(fimg.getAttribute('src').indexOf('figure1-annotated-cn.png') >= 0, '切换后显示中文注释版');
+  t.ok(doc.getElementById('figureNote').textContent.indexOf('解读') >= 0, '说明文字随切换更新且保留等级标注');
+  t.ok(doc.getElementById('figureCounter').textContent === '2 / 3', '计数器随切换更新');
+  t.ok(doc.getElementById('figureOpen').getAttribute('href').indexOf('figure1-annotated-cn.png') >= 0, '新标签打开链接随切换更新');
+  fire(w, ftabs[0], 'click');
+  t.ok(fimg.getAttribute('src').indexOf('web-figure1-attention-is-all-you-need.png') >= 0, '可切回论文原图');
+
   t.group('界面 · 参数联动');
 
   const src = doc.getElementById('srcTokens');

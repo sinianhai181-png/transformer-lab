@@ -281,6 +281,29 @@
     reader.readAsText(file);
   }
 
+  /* 论文原图卡片：三张图切换，默认显示 Figure 1 原图 */
+  function bindPaperFigure() {
+    var card = $('paperFigureCard');
+    if (!card) return;
+    var tabs = card.querySelectorAll('.figure-tab');
+    var img = $('paperFigureImg');
+    var note = $('figureNote');
+    var open = $('figureOpen');
+    var counter = $('figureCounter');
+    function select(btn) {
+      for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
+      btn.classList.add('active');
+      img.setAttribute('src', btn.getAttribute('data-src'));
+      img.setAttribute('alt', btn.getAttribute('data-label'));
+      note.innerHTML = '<b>' + btn.getAttribute('data-label') + '</b> · ' + btn.getAttribute('data-note');
+      open.setAttribute('href', btn.getAttribute('data-src'));
+      counter.textContent = (Array.prototype.indexOf.call(tabs, btn) + 1) + ' / ' + tabs.length;
+    }
+    for (var j = 0; j < tabs.length; j++) {
+      (function (b) { b.addEventListener('click', function () { select(b); }); })(tabs[j]);
+    }
+  }
+
   /* ---------------- 初始化 ---------------- */
   function init() {
     var preset = $('presetSelect');
@@ -307,6 +330,8 @@
       state.model.resetWeights(); recompute(false);
       $('presetHint').textContent = '已恢复为标准 Xavier 初始化。';
     });
+    bindPaperFigure();
+
     $('btnExport').addEventListener('click', exportConfig);
     $('btnExportSvg').addEventListener('click', exportPanorama);
     $('btnImport').addEventListener('click', function () { $('importFile').click(); });

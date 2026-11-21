@@ -137,6 +137,18 @@ select { cursor: pointer; }
 /* ---- 全景结构图 ---- */
 .panorama { width: 100%; overflow-x: auto; }
 .panorama svg { display: block; min-width: 780px; width: 100%; height: auto; }
+
+/* 论文原图卡片 */
+.figure-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.figure-tab { background: #fff; color: var(--ink-2); }
+.figure-tab.active { background: var(--primary-soft); border-color: #c7d2fe; color: var(--primary); }
+.figure-stage {
+  width: 100%; background: #fbfcfe; border: 1px solid var(--line-soft); border-radius: 10px;
+  padding: 12px; text-align: center; overflow-x: auto;
+}
+.figure-stage img { display: block; max-width: 100%; max-height: 720px; margin: 0 auto; height: auto; }
+.figure-note { margin-top: 8px; font-size: 11.5px; color: var(--ink-2); line-height: 1.7; }
+.figure-note b { color: var(--ink); }
 .pano-label { font: 600 12px "Segoe UI", "Microsoft YaHei", sans-serif; fill: var(--ink-2); }
 .pano-small { font: 10.5px "Segoe UI", "Microsoft YaHei", sans-serif; fill: var(--muted); }
 .pano-title { font: 700 13px "Segoe UI", "Microsoft YaHei", sans-serif; fill: var(--ink); }
