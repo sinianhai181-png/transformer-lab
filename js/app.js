@@ -126,6 +126,7 @@
     $('stepSource').textContent = s.source || '—';
     V.renderStep($('stepBody'), s, { config: state.config });
     highlightPanorama(s.focus);
+    if (typeof highlightFigure === 'function') highlightFigure(s);
 
     var chips = $('stepChips').querySelectorAll('.step-chip');
     Array.prototype.forEach.call(chips, function (chip, k) {
@@ -281,7 +282,80 @@
     reader.readAsText(file);
   }
 
-  /* 论文原图卡片：三张图切换，默认显示 Figure 1 原图 */
+  /* 论文原图卡片：三张图切换，默认显示 Figure 1 原图；逐环节播放时高亮当前模块 */
+  /* 框坐标基于论文 Figure 1 原图像素（1520×2239），来自带网格预览的人工标定 */
+  var FIG_BOXES = [
+    { k: 'embSrc', x: 300, y: 1800, w: 370, h: 105, label: 'Input Embedding' },
+    { k: 'peSrc', x: 255, y: 1680, w: 185, h: 110, label: 'PE' },
+    { k: 'embTgt', x: 840, y: 1800, w: 375, h: 105, label: 'Output Embedding' },
+    { k: 'peTgt', x: 1118, y: 1680, w: 192, h: 110, label: 'PE' },
+    { k: 'attnEnc', x: 310, y: 1340, w: 370, h: 145, label: 'MHA' },
+    { k: 'attnDecMasked', x: 840, y: 1340, w: 375, h: 145, label: 'Masked MHA' },
+    { k: 'attnCross', x: 840, y: 965, w: 375, h: 130, label: 'Cross MHA' },
+    { k: 'ffnEnc', x: 310, y: 960, w: 370, h: 135, label: 'FFN' },
+    { k: 'ffnDec', x: 840, y: 625, w: 375, h: 140, label: 'FFN' },
+    { k: 'normEnc1', x: 310, y: 1235, w: 370, h: 95, label: 'Add & Norm' },
+    { k: 'normEnc2', x: 310, y: 880, w: 370, h: 85, label: 'Add & Norm' },
+    { k: 'normDec1', x: 840, y: 1210, w: 375, h: 95, label: 'Add & Norm' },
+    { k: 'normDec2', x: 840, y: 880, w: 375, h: 85, label: 'Add & Norm' },
+    { k: 'normDec3', x: 840, y: 540, w: 375, h: 80, label: 'Add & Norm' },
+    { k: 'output', x: 830, y: 0, w: 400, h: 495, label: 'Linear → Softmax' }
+  ];
+  var FIG_COORD = { w: 1520, h: 2239, scale: 1, ox: 0, oy: 0, enabled: true };
+
+  /* 步骤 id → 论文图框 key。cross/decoder 模式走解码器侧，encoder 模式走编码器侧 */
+  function figureKeysForStep(step) {
+    if (!step) return [];
+    var id = step.id || '', mode = state.config.mode, dec = mode !== 'encoder';
+    if (id === 'tokens' || id === 'embedding' || id === 'input') return ['embSrc'];
+    if (id === 'pe') return ['peSrc'];
+    if (id === 'decoder-input') return ['embTgt'];
+    if (id.indexOf('cross-attn') === 0) return ['attnCross'];
+    if (id.indexOf('self-attn') === 0) return [dec ? 'attnDecMasked' : 'attnEnc'];
+    if (id.indexOf('addnorm-cross') === 0) return ['normDec2'];
+    if (id.indexOf('addnorm1') === 0) return [dec ? 'normDec1' : 'normEnc1'];
+    if (id.indexOf('addnorm2') === 0) return [dec ? 'normDec3' : 'normEnc2'];
+    if (id.indexOf('ffn') === 0) return [dec ? 'ffnDec' : 'ffnEnc'];
+    if (id === 'logits' || id === 'probs') return ['output'];
+    return (step.focus || []).indexOf('output') >= 0 ? ['output'] : [];
+  }
+
+  function renderFigureOverlay() {
+    var svg = $('figureOverlay');
+    if (!svg) return;
+    var scale = FIG_COORD.scale;
+    svg.setAttribute('viewBox', '0 0 ' + FIG_COORD.w + ' ' + FIG_COORD.h);
+    svg.innerHTML = '';
+    if (!FIG_COORD.enabled) return;
+    FIG_BOXES.forEach(function (b) {
+      var r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      r.setAttribute('x', FIG_COORD.ox + b.x * scale);
+      r.setAttribute('y', FIG_COORD.oy + b.y * scale);
+      r.setAttribute('width', b.w * scale);
+      r.setAttribute('height', b.h * scale);
+      r.setAttribute('data-key', b.k);
+      svg.appendChild(r);
+    });
+  }
+
+  function highlightFigure(step) {
+    var svg = $('figureOverlay');
+    if (!svg || !FIG_COORD.enabled) return;
+    var keys = figureKeysForStep(step);
+    var rects = svg.querySelectorAll('rect');
+    Array.prototype.forEach.call(rects, function (r) {
+      r.classList.toggle('on', keys.indexOf(r.getAttribute('data-key')) >= 0);
+    });
+    var hint = $('figureHint');
+    if (hint) {
+      var names = FIG_BOXES.filter(function (b) { return keys.indexOf(b.k) >= 0; })
+        .map(function (b) { return b.label; });
+      hint.textContent = step && names.length
+        ? '当前步骤「' + step.title + '」→ 图中高亮：' + names.join('、') + '。'
+        : '播放「逐环节演示」时，当前计算涉及的模块会在图上高亮。';
+    }
+  }
+
   function bindPaperFigure() {
     var card = $('paperFigureCard');
     if (!card) return;
@@ -298,10 +372,24 @@
       note.innerHTML = '<b>' + btn.getAttribute('data-label') + '</b> · ' + btn.getAttribute('data-note');
       open.setAttribute('href', btn.getAttribute('data-src'));
       counter.textContent = (Array.prototype.indexOf.call(tabs, btn) + 1) + ' / ' + tabs.length;
+      FIG_COORD.w = Number(btn.getAttribute('data-w')) || 1520;
+      FIG_COORD.h = Number(btn.getAttribute('data-h')) || 2239;
+      FIG_COORD.scale = Number(btn.getAttribute('data-scale')) || 0;
+      FIG_COORD.ox = Number(btn.getAttribute('data-ox')) || 0;
+      FIG_COORD.oy = Number(btn.getAttribute('data-oy')) || 0;
+      FIG_COORD.enabled = FIG_COORD.scale > 0;
+      renderFigureOverlay();
+      if (FIG_COORD.enabled) {
+        highlightFigure(state.result.steps[state.stepIndex]);
+      } else {
+        var h = $('figureHint');
+        if (h) h.textContent = '该图为教学重绘，布局与论文原图不同，不提供模块高亮。切回论文原图或中文注释版可继续使用逐环节高亮。';
+      }
     }
     for (var j = 0; j < tabs.length; j++) {
       (function (b) { b.addEventListener('click', function () { select(b); }); })(tabs[j]);
     }
+    renderFigureOverlay();
   }
 
   /* ---------------- 初始化 ---------------- */
