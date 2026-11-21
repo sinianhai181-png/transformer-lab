@@ -47,6 +47,34 @@ exports.run = function (t) {
   fire(w, ftabs[0], 'click');
   t.ok(fimg.getAttribute('src').indexOf('web-figure1-attention-is-all-you-need.png') >= 0, '可切回论文原图');
 
+  t.group('界面 · 论文图逐环节高亮');
+
+  const overlay = doc.getElementById('figureOverlay');
+  t.ok(!!overlay, '论文图高亮叠加层已就位');
+  t.ok(overlay.querySelectorAll('rect').length === 15, '叠加层包含 15 个模块框');
+  t.ok(doc.getElementById('figureOverlay').getAttribute('viewBox') === '0 0 1520 2239', 'viewBox 与原图尺寸一致');
+  // tokens 步骤（默认第 1 步）应高亮源序列嵌框
+  const onRects0 = overlay.querySelectorAll('rect.on');
+  t.ok(onRects0.length >= 1 && onRects0[0].getAttribute('data-key') === 'embSrc', '首步高亮 Input Embedding 框');
+  // 跳到自注意力步骤：cross 模式下应为解码器 masked 自注意力
+  const attnStep = w.TMApp.state().steps.find(x => /^self-attn\d+$/.test(x.id));
+  t.ok(!!attnStep, '存在自注意力权重步骤');
+  w.TMApp.setStep(w.TMApp.state().steps.indexOf(attnStep));
+  const onKeys = Array.from(overlay.querySelectorAll('rect.on')).map(r => r.getAttribute('data-key'));
+  t.ok(onKeys.indexOf('attnDecMasked') >= 0, 'cross 模式自注意力高亮解码器 Masked MHA 框');
+  t.ok(doc.getElementById('figureHint').textContent.indexOf('当前步骤') >= 0, '高亮说明显示当前步骤');
+  // 中文注释版：框坐标按 0.55 缩放 + 偏移换算
+  fire(w, ftabs[1], 'click');
+  const cnOverlay = doc.getElementById('figureOverlay');
+  t.ok(cnOverlay.getAttribute('viewBox') === '0 0 2060 1397', '注释版 viewBox 随图片尺寸切换');
+  const firstRect = cnOverlay.querySelector('rect');
+  t.ok(Number(firstRect.getAttribute('x')) === Math.round(300 * 0.55 + 40) || Math.abs(Number(firstRect.getAttribute('x')) - (300 * 0.55 + 40)) < 1e-6, '注释版框坐标已换算');
+  // 经典图解：禁用高亮
+  fire(w, ftabs[2], 'click');
+  t.ok(doc.getElementById('figureOverlay').querySelectorAll('rect').length === 0, '经典图解不绘制高亮框');
+  t.ok(doc.getElementById('figureHint').textContent.indexOf('不提供模块高亮') >= 0, '经典图解给出不高亮说明');
+  fire(w, ftabs[0], 'click');
+
   t.group('界面 · 参数联动');
 
   const src = doc.getElementById('srcTokens');
