@@ -166,11 +166,17 @@
         </div>
       </div>
       <div class="figure-tabs" id="figureTabs">
-        <button class="btn btn-mini figure-tab active" type="button" data-src="docs/assets/web-figure1-attention-is-all-you-need.png" data-label="论文 Figure 1 原图" data-note="[论文] arXiv HTML 版 1706.03762v7/Figures/ModalNet-21.png（1520×2239）。Google 授权：署名条件下可用于新闻或学术作品。">论文原图</button>
-        <button class="btn btn-mini figure-tab" type="button" data-src="docs/assets/figure1-annotated-cn.png" data-label="论文 Figure 1 · 中文注释版" data-note="[解读] 在原图上标注 15 个模块编号，右侧附中文详解栏（2060×1397）。编号与详解为本项目整理，非论文原文。">中文注释版</button>
-        <button class="btn btn-mini figure-tab" type="button" data-src="docs/assets/web-illustrated-transformer-stack.png" data-label="The Illustrated Transformer · 堆叠图" data-note="[解读] Jay Alammar 教学向重绘（2018），非论文原图；用于降低阅读门槛，模块名与原图一致但省略了部分细节。">经典图解</button>
+        <button class="btn btn-mini figure-tab active" type="button" data-src="docs/assets/web-figure1-attention-is-all-you-need.png" data-label="论文 Figure 1 原图" data-w="1520" data-h="2239" data-scale="1" data-ox="0" data-oy="0" data-note="[论文] arXiv HTML 版 1706.03762v7/Figures/ModalNet-21.png（1520×2239）。Google 授权：署名条件下可用于新闻或学术作品。">论文原图</button>
+        <button class="btn btn-mini figure-tab" type="button" data-src="docs/assets/figure1-annotated-cn.png" data-label="论文 Figure 1 · 中文注释版" data-w="2060" data-h="1397" data-scale="0.55" data-ox="40" data-oy="96" data-note="[解读] 在原图上标注 15 个模块编号，右侧附中文详解栏（2060×1397）。编号与详解为本项目整理，非论文原文。">中文注释版</button>
+        <button class="btn btn-mini figure-tab" type="button" data-src="docs/assets/web-illustrated-transformer-stack.png" data-label="The Illustrated Transformer · 堆叠图" data-w="1218" data-h="793" data-scale="0" data-ox="0" data-oy="0" data-note="[解读] Jay Alammar 教学向重绘（2018），非论文原图；该图布局与原图不同，不提供高亮叠加。">经典图解</button>
       </div>
-      <div class="figure-stage"><img id="paperFigureImg" src="docs/assets/web-figure1-attention-is-all-you-need.png" alt="Transformer 模型架构图 · 论文 Figure 1 原图"></div>
+      <div class="figure-stage">
+        <div class="figure-canvas" id="figureCanvas">
+          <img id="paperFigureImg" src="docs/assets/web-figure1-attention-is-all-you-need.png" alt="Transformer 模型架构图 · 论文 Figure 1 原图">
+          <svg id="figureOverlay" class="figure-overlay" viewBox="0 0 1520 2239" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
+        </div>
+      </div>
+      <p class="figure-hint" id="figureHint">播放「逐环节演示」时，当前计算涉及的模块会在图上高亮。以下颜色区分不同子层；原图为静态位图，高亮为叠加示意，非论文原文标注。</p>
       <p class="figure-note" id="figureNote"><b>论文 Figure 1 原图</b> · 来源：Vaswani et al. (2017), arXiv:1706.03762v7, Figure 1 · Google 授权：署名条件下可用于新闻或学术作品。</p>
     </section>
 
