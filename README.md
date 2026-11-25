@@ -121,7 +121,7 @@ transformer-lab/
 │   └── run-all.js          # 测试入口
 ├── docs/
 │   ├── TRANSFORMER.md       # Transformer 系统整理：论文、实现、变体与澄清
-│   ├── ADVANCED.md          # 九个进阶主题、一手来源与边界
+│   ├── ADVANCED.md          # 十一个进阶主题、一手来源与边界
 │   ├── PAPERS.md            # 17 篇一手论文素材与数据口径
 │   ├── WRITING-MEMO.md      # 写作建议（非事实素材）
 │   ├── RESEARCH-NOTES.md    # 采集口径、局限与核验路径
